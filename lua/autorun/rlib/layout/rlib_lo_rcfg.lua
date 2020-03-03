@@ -65,37 +65,63 @@ function PANEL:Init( )
     *   sizing
     */
 
-    local sc_w, sc_h        = ui:scalesimple( 0.90, 0.90, 0.90 ), ui:scalesimple( 0.90, 0.90, 0.90 )
-    local pnl_w, pnl_h      = cfg.rcfg.ui.width, cfg.rcfg.ui.height
-    local ui_w, ui_h        = sc_w * pnl_w, sc_h * pnl_h
+    local ui_w, ui_h        = cfg.rcfg.ui.width, cfg.rcfg.ui.height
 
     /*
     *   localized colorization
     */
 
-    local clr_cursor        = Color( 200, 200, 200, 255 )
+    local clr_cur           = Color( 200, 200, 200, 255 )
     local clr_text          = Color( 255, 255, 255, 255 )
     local clr_hl            = Color( 25, 25, 25, 255 )
     local clr_box_status    = Color( 150, 50, 50, 255 )
+
+    local mat_bg            = 'http://cdn.rlib.io/gms/bg.png'
     local state, r, g, b    = 0, 255, 0, 0
+    local sf                = string.format
 
     /*
     *   parent pnl
     */
 
-    self:SetPaintShadow     ( true          )
-    self:SetSize            ( ui_w, ui_h    )
-    self:SetMinWidth        ( ui_w          )
-    self:SetMinHeight       ( ui_h          )
-    self:MakePopup          (               )
-    self:SetTitle           ( ''            )
-    self:SetSizable         ( true          )
-    self:ShowCloseButton    ( false         )
-    self:DockPadding        ( 0, 34, 0, 0   )
+    self:SetPaintShadow     ( true              )
+    self:SetSize            ( ui_w, ui_h        )
+    self:SetMinWidth        ( ui_w              )
+    self:SetMinHeight       ( ui_h              )
+    self:MakePopup          (                   )
+    self:SetTitle           ( ''                )
+    self:SetSizable         ( true              )
+    self:ShowCloseButton    ( false             )
+    self:DockPadding        ( 0, 34, 0, 0       )
 
     self.hdr_title          = 'rcfg'
-    self.conn_status        = lang( 'lib_oort_abt_status_pending' )
     self.conn_clr           = Color( 200, 100, 100, 255 )
+
+        /*
+        *   image :: dhtml src
+        */
+
+    self.par                    = ui.new( 'dhtml', self             )
+    :nodraw                     (                                   )
+    :static                     ( FILL                              )
+    :margin                     ( 5, 0, 5, 0                        )
+    :sbar                       ( false                             )
+
+                                self.par:SetHTML(
+                                [[
+                                    <body style='overflow: hidden; height: 100%; width: 100%; margin:0px;'>
+                                        <img width='100%' height='100%' style='width:200%;height:140%;' src=']] .. mat_bg .. [['>
+                                    </body>
+                                ]])
+
+    self.filter                 = ui.new( 'pnl', self               )
+    :static                     ( FILL                              )
+    :margin                     ( 5, 0, 5, 0                        )
+
+                                :draw( function( s, w, h )
+                                    design.blur( s, 4 )
+                                    design.box( 0, 0, w, h, Color( 0, 0, 0, 220 ) )
+                                end )
 
     /*
     *   display parent :: static || animated
@@ -110,108 +136,345 @@ function PANEL:Init( )
 
     /*
     *   titlebar
+    *
+    *   to overwrite existing properties from the skin; do not change this
+    *   labels name to anything other than lblTitle otherwise it wont
+    *   inherit position/size properties
     */
 
-    self.lblTitle = vgui.Create( 'DLabel', self )
-    self.lblTitle:SetText( '' )
-    self.lblTitle:SetFont( pref( 'rcfg.title' ) )
-    self.lblTitle:SetColor( Color( 255, 255, 255, 255 ) )
-    self.lblTitle.Paint = function( s, w, h )
-        if not self.title or self.title == '' then self.title = 'rcfg' end
-        draw.SimpleText( utf8.char( 9930 ), pref( 'rcfg.icon' ), 0, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-        draw.SimpleText( self.title, pref( 'rcfg.title' ), 25, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-    end
+    self.lblTitle               = ui.new( 'lbl', self               )
+    :notext                     (                                   )
+    :font                       ( pref( 'rcfg.title' )              )
+    :clr                        ( Color( 255, 255, 255, 255 )       )
+
+                                :draw( function( s, w, h )
+                                    if not self.title or self.title == '' then self.title = 'rcfg' end
+                                    draw.SimpleText( utf8.char( 9930 ), pref( 'rcfg.icon' ), 0, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( self.title, pref( 'rcfg.title' ), 25, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                end )
 
     /*
     *   close button
     *
-    *   to overwrite existing properties from the skin; do not change this buttons name to anything other 
-    *   than btnClose otherwise it wont inherit position/size properties
+    *   to overwrite existing properties from the skin; do not change this
+    *   buttons name to anything other than btnClose otherwise it wont
+    *   inherit position/size properties
     */
 
-    self.btnClose = vgui.Create( 'DButton', self )
-    self.btnClose:SetText( '' )
-    self.btnClose:SetTooltip( lang( 'tooltip_close' ) )
-    self.btnClose.OnCursorEntered = function( s ) s.hover = true end
-    self.btnClose.OnCursorExited = function( s ) s.hover = false end
-    self.btnClose.DoClick = function( s )
-        self:Destroy( )
-    end
-    self.btnClose.Paint = function( s, w, h )
-        local clr_txt = s.hover and Color( 200, 55, 55, 255 ) or Color( 237, 237, 237, 255 )
-        draw.SimpleText( helper.get:utf8( 'close' ), pref( 'rcfg.exit' ), w / 2 - 7, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-    end
+    self.btnClose               = ui.new( 'btn', self               )
+    :bsetup                     (                                   )
+    :notext                     (                                   )
+    :tooltip                    ( lang( 'tooltip_close' )           )
+    :ocr                        ( self                              )
+
+                                :draw( function( s, w, h )
+                                    local clr_txt = s.hover and Color( 200, 55, 55, 255 ) or Color( 237, 237, 237, 255 )
+                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'rcfg.exit' ), w / 2 - 7, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                end )
 
     /*
-    *   subparent left
+    *   header
     */
 
-    self.p_sub_header = vgui.Create( 'DPanel', self )
-    self.p_sub_header:Dock( TOP )
-    self.p_sub_header:DockMargin( 0, 0, 0, 0 )
-    self.p_sub_header:SetTall( 70 )
-    self.p_sub_header.Paint = function( s, w, h )
-        design.rbox( 0, 5, 0, w - 10, h, Color( 34, 34, 34, 255 ) )
-        design.box( 5, h - 1, w - 10, 2, Color( 35, 35, 35, 255 ) )
+    self.p_hdr                  = ui.new( 'pnl', self               )
+    :static                     ( TOP                               )
+    :margin                     ( 0                                 )
+    :tall                       ( 70                                )
 
-        if ( state == 0 ) then
-            g = g + 1
-            if ( g == 255 ) then state = 1 end
-        elseif ( state == 1 ) then
-            r = r - 1
-            if ( r == 0 ) then state = 2 end
-        elseif ( state == 2 ) then
-            b = b + 1
-            if ( b == 255 ) then state = 3 end
-        elseif ( state == 3 ) then
-            g = g - 1
-            if ( g == 0 ) then state = 4 end
-        elseif ( state == 4 ) then
-            r = r + 1
-            if ( r == 255 ) then state = 5 end
-        elseif ( state == 5 ) then
-            b = b - 1
-            if ( b == 0 ) then state = 0 end
-        end
+                                :draw( function( s, w, h )
+                                    design.rbox( 0, 5, 0, w - 10, h, Color( 34, 34, 34, 255 ) )
+                                    design.box( 5, h - 1, w - 10, 2, Color( 35, 35, 35, 255 ) )
 
-        local clr_rgb = Color( r, g, b )
+                                    if ( state == 0 ) then
+                                        g = g + 1
+                                        if ( g == 255 ) then state = 1 end
+                                    elseif ( state == 1 ) then
+                                        r = r - 1
+                                        if ( r == 0 ) then state = 2 end
+                                    elseif ( state == 2 ) then
+                                        b = b + 1
+                                        if ( b == 255 ) then state = 3 end
+                                    elseif ( state == 3 ) then
+                                        g = g - 1
+                                        if ( g == 0 ) then state = 4 end
+                                    elseif ( state == 4 ) then
+                                        r = r + 1
+                                        if ( r == 255 ) then state = 5 end
+                                    elseif ( state == 5 ) then
+                                        b = b - 1
+                                        if ( b == 0 ) then state = 0 end
+                                    end
 
-        draw.SimpleText( self.hdr_title, pref( 'rcfg.name' ), w / 2, h / 2, clr_rgb, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-    end
+                                    local clr_rgb = Color( r, g, b )
+
+                                    draw.SimpleText( self.hdr_title:upper( ), pref( 'rcfg.name' ), w / 2, h / 2 - 8, clr_rgb, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( 'MODULE MANAGEMENT', pref( 'rcfg.sub' ), w / 2, h / 2 + 17, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                end )
 
     /*
-    *   status indicator
+    *   status :: pnl
     */
 
-    self.p_status = vgui.Create( 'DPanel', self )
-    self.p_status:Dock( TOP )
-    self.p_status:DockMargin( 0, 0, 0, 0 )
-    self.p_status:SetTall( 20 )
-    self.p_status.Paint = function( s, w, h )
-        design.rbox( 0, 2, 1, w - 4, h, Color( 15, 15, 15, 230 ) )
-        design.blur( s, 0.5 )
-        design.rbox( 0, 0, 2, w, h, Color( clr_box_status.r, clr_box_status.g, clr_box_status.b, 255 ) )
-    end
+    self.p_status               = ui.new( 'pnl', self               )
+    :static                     ( TOP                               )
+    :margin                     ( 0                                 )
+    :tall                       ( 20                                )
 
-    self.l_status = vgui.Create( 'DLabel', self.p_status )
-    self.l_status:Dock( FILL )
-    self.l_status:DockMargin( 3, 5, 3, 1 )
-    self.l_status:SetFont( pref( 'rcfg.status' ) )
-    self.l_status:SetText( 'Coming Soon' )
-    self.l_status:SetColor( Color( 255, 255, 255, 255 ) )
-    self.l_status:SetContentAlignment( 5 )
-    self.l_status.Think = function( s )
-        s:SetColor( Color( 255, 255, 255, 255 ) )
-    end
+                                :draw( function( s, w, h )
+                                    design.rbox( 0, 2, 1, w - 4, h, Color( 15, 15, 15, 230 ) )
+                                    design.blur( s, 0.5 )
+                                    design.rbox( 0, 0, 2, w, h, Color( clr_box_status.r, clr_box_status.g, clr_box_status.b, 255 ) )
+                                end )
+
+    /*
+    *   status :: label
+    */
+
+    self.l_status               = ui.new( 'lbl', self.p_status      )
+    :notext                     (                                   )
+    :static                     ( FILL                              )
+    :margin                     ( 3, 5, 3, 1                        )
+    :txt                        ( 'Under Development', Color( 255, 255, 255, 255 ), pref( 'rcfg.status' ), false, 5 )
 
     /*
     *   subparent pnl
     */
 
-    self.p_subparent = vgui.Create( 'DPanel', self )
-    self.p_subparent:Dock( FILL )
-    self.p_subparent:DockMargin( 10, 10, 10, 10 )
-    self.p_subparent.Paint = function( s, w, h ) end
+    self.p_sub                  = ui.new( 'pnl', self               )
+    :nodraw                     (                                   )
+    :static                     ( FILL                              )
+    :margin                     ( 10                                )
+
+    /*
+    *   scroll panel
+    */
+
+    self.dsp                    = ui.new( 'rlib.ui.scrollpanel', self.p_sub )
+    :static                     ( FILL                              )
+    :margin                     ( 10, 5, 5, 0                       )
+
+    self.dsp.AlphaOR            = true
+    self.dsp.KnobColor          = Color( 68, 114, 71, 255 )
+
+    /*
+    *   declarations
+    */
+
+    local clr_title             = Color( 38, 175, 99 )
+    local clr_ver_box           = Color( 194, 43, 84, 255 )
+    local clr_ver_txt           = Color( 255, 255, 255, 255 )
+    local clr_rel_txt           = Color( 200, 200, 200, 255 )
+    local clr_des_txt           = Color( 230, 230, 230, 255 )
+
+    local sz_item               = 72
+    local i_modules             = table.Count( rcore.modules )
+    local str_modules           = sf( '%i modules installed', i_modules )
+    local osset                 = 15
+
+    /*
+    *   loop modules
+    */
+
+    local i = 0
+    for k, v in SortedPairs( rcore.modules ) do
+
+        local clr_box               = i % 2 == 0 and Color( 255, 255, 255, 0 ) or Color( 255, 255, 255, 4 )
+        local clr_box_border        = i % 2 == 0 and Color( 255, 255, 255, 0 ) or Color( 255, 255, 255, 4 )
+        local clr_mat               = i % 2 == 0 and Color( 255, 255, 255, 0 ) or Color( 255, 255, 255, 3 )
+
+        /*
+        *   declare modules data
+        */
+
+        local m_name                = isstring( v.name ) and v.name or v.id
+        local m_ver                 = sf( '%s', rlib.get:versionstr( v ) )
+        local m_rel                 = v.released and os.date( '%m.%d.%y', v.released )
+        local m_def                 = 'http://cdn.rlib.io/gms/env.png'
+        local m_img                 = ( isstring( v.icon ) and v.icon ~= '' and v.icon ) or m_def
+        local m_url                 = ( isstring( v.url ) and v.url ) or rlib.manifest.site
+        local m_desc                = isstring( v.desc ) and v.desc or 'No description'
+        m_desc                      = helper.str:truncate( m_desc, 60, '...' ) or lang( 'err' )
+        m_desc                      = helper.str:ucfirst( m_desc )
+
+        /*
+        *   item :: parent
+        */
+
+        self.item                   = ui.new( 'pnl', self.dsp           )
+        :nodraw                     (                                   )
+        :static                     ( TOP                               )
+        :tall                       ( sz_item - 10                      )
+        :margin                     ( 0, 0, 15, 1                       )
+
+                                    :draw( function( s, w, h )
+                                        design.rbox( 4, 0, 0, w - osset, h, clr_box )
+                                        design.obox( 0, 0, w - osset, h, Color( 35, 35, 35, 0 ), clr_box_border )
+
+                                        local w_sz, h_sz = w, h
+                                        draw.TexturedQuad { texture = surface.GetTextureID( helper._mat[ 'grad_down' ] ), color = clr_mat, x = 0, y = 1, w = w_sz - osset, h = h_sz * 1 }
+                                    end )
+
+        /*
+        *   item :: sub
+        */
+
+        self.item_sub               = ui.new( 'pnl', self.item          )
+        :nodraw                     (                                   )
+        :static                     ( FILL                              )
+        :margin                     ( 5                                 )
+
+        /*
+        *   item :: right
+        */
+
+        self.p_right                = ui.new( 'pnl', self.item_sub      )
+        :nodraw                     (                                   )
+        :static                     ( FILL                              )
+        :margin                     ( 0, 0, 0, 0                        )
+
+        /*
+        *   item :: right :: top
+        */
+
+        self.p_r_top                = ui.new( 'pnl', self.p_right       )
+        :nodraw                     (                                   )
+        :static                     ( TOP                               )
+        :margin                     ( 0, 0, 0, 0                        )
+        :tall                       ( 20                                )
+
+                                    :draw( function( s, w, h )
+                                       design.text( m_rel, w - 5 - osset, 12, clr_rel_txt, pref( 'rcfg.item.rel' ), 2, 1 )
+                                       design.title_boxcat( m_name, pref( 'rcfg.item.name' ), m_ver, pref( 'rcfg.item.ver' ), clr_title, clr_ver_box, clr_ver_txt, 8, 12, 1, 0 )
+                                    end )
+
+        /*
+        *   item :: right :: btm
+        */
+
+        self.p_r_btm                = ui.new( 'pnl', self.p_right       )
+        :nodraw                     (                                   )
+        :static                     ( FILL                              )
+        :margin                     ( 0, 0, 0, 0                        )
+
+        /*
+        *   item :: right :: desc
+        */
+
+        self.desc                   = ui.new( 'dt', self.p_right        )
+        :static                     ( TOP                               )
+        :tall                       ( 23                                )
+        :margin                     ( 5, 0, 0, 0                        )
+        :drawbg                     ( false                             )
+        :mline	                    ( false 				            )
+        :ascii	                    ( false 				            )
+        :canedit	                ( false 				            )
+        :scur	                    ( Color( 255, 255, 255, 255 ), 'beam' )
+        :txt	                    ( m_desc, clr_des_txt, pref( 'rcfg.item.desc' ) )
+        :ocnf                       ( true                              )
+
+        /*
+        *   image :: container
+        */
+
+        self.p_img                  = ui.new( 'pnl', self.item_sub      )
+        :static                     ( LEFT                              )
+        :wide                       ( sz_item - 25                      )
+        :margin                     ( 4                                 )
+
+                                    :draw( function( s, w, h )
+                                        design.box( 0, 0, w, h, Color( 255, 255, 255, 25 ))
+                                    end )
+
+        /*
+        *   image :: dhtml src
+        */
+
+        self.av_url                 = ui.new( 'dhtml', self.p_img       )
+        :nodraw                     (                                   )
+        :static                     ( FILL                              )
+        :margin                     ( 1                                 )
+        :sbar                       ( false                             )
+
+                                    self.av_url:SetHTML(
+                                    [[
+                                        <body style='overflow: hidden; height: 100%; width: 100%; margin:0px;'>
+                                            <img width='100%' height='100%' style='width:100%;height:100%;' src=']] .. m_img .. [['>
+                                        </body>
+                                    ]])
+
+        /*
+        *   image :: dhtml src
+        */
+
+        self.av_def                 = ui.new( 'dhtml', self.p_img       )
+        :nodraw                     (                                   )
+        :static                     ( FILL                              )
+        :margin                     ( 1                                 )
+        :sbar                       ( false                             )
+
+                                    self.av_url:SetHTML(
+                                    [[
+                                        <body style='overflow: hidden; height: 100%; width: 100%; margin:0px;'>
+                                            <img width='100%' height='100%' style='width:100%;height:100%;' src=']] .. m_def .. [['>
+                                        </body>
+                                    ]])
+
+        /*
+        *   image :: btn
+        */
+
+        self.b_hov                  = ui.new( 'btn', self.item          )
+        :bsetup                     (                                   )
+        :notext                     (                                   )
+        :static                     ( FILL                              )
+        :margin                     ( 0, 0, 0, 0                        )
+        :openurl                    ( m_url                             )
+
+                                    :draw( function( s, w, h )
+                                        if s.hover then
+                                            design.rbox( 4, w - 5, 0, 5, h, Color( 231, 103, 81, 255 ) )
+                                        end
+                                    end )
+
+        /*
+        *   count loop progress
+        */
+
+        i = i + 1
+
+        /*
+        *   hide spacer if last item in list
+        */
+
+        if i == i_modules then
+            ui:hide( self.sp )
+        end
+
+    end
+
+    /*
+    *   spacer :: bottom
+    */
+
+    self.sp_btm                     = ui.new( 'pnl', self.dsp           )
+    :nodraw                         (                                   )
+    :static                         ( TOP                               )
+    :tall                           ( 10                                )
+    :margin                         ( 0, 3, 20, 3                       )
+
+    /*
+    *   footer
+    */
+
+    self.p_ftr                      = ui.new( 'pnl', self               )
+    :static                         ( BOTTOM                            )
+    :margin                         ( 5, 0, 5, 0                        )
+    :tall                           ( 25                                )
+
+                                    :draw( function( s, w, h )
+                                        design.box( 0, 0, w, h, Color( 34, 34, 34, 255 ) )
+                                        draw.SimpleText( str_modules, pref( 'rcfg.footer.count' ), w - 6, h / 2, Color( 255, 255, 255, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+                                    end )
 
 end
 
@@ -322,7 +585,7 @@ end
 */
 
 function PANEL:Paint( w, h )
-    design.rbox( 4, 5, 0, w - 10, h - 8, Color( 40, 40, 40, 255 ) )
+    design.rbox( 4, 5, 0, w - 10, h - 8, Color( 44, 49, 55, 255 ) )
     design.rbox_adv( 0, 5, 0, w - 10, 34, Color( 30, 30, 30, 255 ), true, true, false, false )
 
     -- resizing arrow

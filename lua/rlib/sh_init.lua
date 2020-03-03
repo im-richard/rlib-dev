@@ -1144,7 +1144,7 @@ hook.Add( pid( 'modules.load.post' ), pid( 'modules.sounds.register' ), register
 *
 *   register default storage tables
 *
-*   @ex     : hook.Run( pid( 'modules.storage.defaults' ), mod_id )
+*   @ex     : hook.Run( pid( 'modules.storage.struct' ), mod_id )
 *
 *   @param  : tbl source
 */
@@ -1159,10 +1159,10 @@ local function storage_struct_defs( mod_id )
     local source = base.modules
 
     /*
-    *   storage :: base
+    *   storage :: sh :: base
     */
 
-    local storage_def =
+    local storage_sh_b =
     {
         bInitialized        = false,
         initialize          = { },
@@ -1170,10 +1170,7 @@ local function storage_struct_defs( mod_id )
         cc                  = { },
         ent                 = { },
         binds               = { },
-        pnl                 = { },
-        ui                  = { },
         dev                 = { },
-        ctm                 = { },
         settings            = { },
         themes =
         {
@@ -1182,15 +1179,32 @@ local function storage_struct_defs( mod_id )
         },
     }
 
-    for k, v in pairs( storage_def ) do
+    for k, v in pairs( storage_sh_b ) do
         source[ mod_id ][ k ] = source[ mod_id ][ k ] or v
     end
 
     /*
-    *   storage :: cfgs
+    *   storage :: cl :: base
     */
 
-    local storage_cfg =
+    if CLIENT then
+        local storage_cl =
+        {
+            pnl                 = { },
+            ui                  = { },
+            ctm                 = { },
+        }
+
+        for k, v in pairs( storage_cl ) do
+            source[ mod_id ][ k ] = source[ mod_id ][ k ] or v
+        end
+    end
+
+    /*
+    *   storage :: sh :: cfg
+    */
+
+    local storage_sh_c =
     {
         initialize          = { },
         general             =
@@ -1226,12 +1240,12 @@ local function storage_struct_defs( mod_id )
         dev                 = { },
     }
 
-    for k, v in pairs( storage_cfg ) do
+    for k, v in pairs( storage_sh_c ) do
         source[ mod_id ][ 'settings' ][ k ] = source[ mod_id ][ 'settings' ][ k ] or v
     end
 
 end
-hook.Add( pid( 'modules.storage.defaults' ), pid( 'modules.storage.defaults' ), storage_struct_defs )
+hook.Add( pid( 'modules.storage.struct' ), pid( 'modules.storage.struct' ), storage_struct_defs )
 
 /*
 *   register module
@@ -1351,7 +1365,7 @@ function base:module_register( path, mod, b_isext )
     *   on repetitiveness of declaring these in the module manifest file
     */
 
-    hook.Run( pid( 'modules.storage.defaults' ), mod_id )
+    hook.Run( pid( 'modules.storage.struct' ), mod_id )
 
     /*
     *   module sys tbl

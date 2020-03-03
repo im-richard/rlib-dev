@@ -162,11 +162,15 @@ end
         },
         binds =
         {
+            enabled         = true,
             act_btn1        = 79,   -- key: shift
             act_btn2        = 59,   -- key: period
             history_up      = 88,   -- key: up arrow
             history_down    = 90,   -- key: down arrow
-            chat            = { '!console', '!konsole' },
+            chat            =
+            {
+                [ '!console' ]  = true,
+            },
         },
         fadetime            = 8,
         prefix_say          = '!',
@@ -305,9 +309,14 @@ end
             },
             binds =
             {
+                enabled     = true,
                 key1        = 79,   -- key: shift
                 key2        = 58,   -- key: comma
-                chat        = { '!rlib', '!about' },
+                chat        =
+                {
+                    [ '!rlib' ]     = true,
+                    [ '!about']     = true,
+                },
             },
         }
 
@@ -327,15 +336,19 @@ end
         {
             ui =
             {
-                width       = 400,
-                height      = 350,
+                width       = 450,
+                height      = 585,
             },
             binds =
             {
-                enabled     = false,
+                enabled     = true,
                 key1        = 79,   -- key: shift
                 key2        = 58,   -- key: comma
-                chat        = { '!rcfg', '!configs' },
+                chat        =
+                {
+                    [ '!rcfg' ]     = true,
+                    [ '!addons' ]   = true,
+                },
             },
         }
 
@@ -357,7 +370,12 @@ end
             },
             binds =
             {
-                chat        = { '!mviewer', '!mdlview' },
+                enabled     = true,
+                chat        =
+                {
+                    [ '!mviewer' ]      = true,
+                    [ '!mdlview']       = true,
+                },
             },
         }
 
@@ -379,7 +397,11 @@ end
             },
             binds =
             {
-                chat        = '!lang',
+                enabled     = true,
+                chat        =
+                {
+                    [ '!lang' ]         = true,
+                },
             },
         }
 
@@ -401,7 +423,12 @@ end
             },
             binds =
             {
-                chat        = '!dc',
+                enabled     = true,
+                chat        =
+                {
+                    [ '!dc' ]           = true,
+                    [ '!disconnect']    = true,
+                },
             },
         }
 
@@ -426,8 +453,13 @@ end
             },
             binds =
             {
+                enabled     = true,
                 key1        = 79,   -- key: shift
                 key2        = 60,   -- key: slash
+                chat        =
+                {
+                    [ '!rlib_report' ] = true,
+                },
             },
         }
 
@@ -441,7 +473,11 @@ end
     {
         binds =
         {
-            chat    = '!pco',
+            enabled     = true,
+            chat        =
+            {
+                [ '!pco' ] = true,
+            },
         }
     }
 
@@ -451,7 +487,7 @@ end
 
     cfg.rdo =
     {
-        enabled = true,
+        enabled = false,
         drawdist =
         {
             enabled = true,

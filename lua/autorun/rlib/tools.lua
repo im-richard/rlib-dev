@@ -161,7 +161,7 @@ function tools.rcfg:Run( )
     end
 
     self.pnl                = ui.new( 'rlib.lo.rcfg'            )
-    :title                  ( lang( 'rcfg_title' )              )
+    :title                  ( lang( 'lib_addons_title' )        )
     :actshow                (                                   )
 end
 base.cc.Add( pid( 'rcfg' ), tools.rcfg.Run )

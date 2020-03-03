@@ -906,14 +906,14 @@ local function lib_checkum_validate( )
     end
 
     if i > 0 then
-        base:console( pl, lang( 'sym_sp' ) .. '\n' )
-        base:console( pl, Color( 255, 255, 0 ), lang( 'lib_integrity_title', mf.name:upper( ) ) .. ' \n' )
-        base:console( pl, Color( 255, 255, 255 ), lang( 'lib_integrity_l1' ) )
-        base:console( pl, Color( 255, 255, 255 ), lang( 'lib_integrity_l2' ) )
-        base:console( pl, 0 )
-        base:console( pl, Color( 255, 0, 0 ), lang( 'lib_integrity_cnt', i ) )
-        base:console( pl, 0 )
-        base:console( pl, lang( 'sym_sp' ) .. '\n' )
+        base:console( nil, lang( 'sym_sp' ) .. '\n' )
+        base:console( nil, Color( 255, 255, 0 ), lang( 'lib_integrity_title', mf.name:upper( ) ) .. ' \n' )
+        base:console( nil, Color( 255, 255, 255 ), lang( 'lib_integrity_l1' ) )
+        base:console( nil, Color( 255, 255, 255 ), lang( 'lib_integrity_l2' ) )
+        base:console( nil, 0 )
+        base:console( nil, Color( 255, 0, 0 ), lang( 'lib_integrity_cnt', i ) )
+        base:console( nil, 0 )
+        base:console( nil, lang( 'sym_sp' ) .. '\n' )
 
         return
     end
@@ -2208,13 +2208,36 @@ local function tools_konsole_ps_toggle( pl, text )
     local comp_args     = string.Split( text, ' ' )
     local msg           = comp_args[ 1 ]:lower( )
 
-    if not table.HasValue( cfg.konsole.binds.chat, msg ) then return end
+    if not cfg.konsole.binds.enabled then return end
+    if not cfg.konsole.binds.chat[ msg ] then return end
 
     pl:ConCommand( pid( 'konsole' ) )
 
     return ''
 end
 hook.Add( 'PlayerSay', pid( 'psay.konsole' ), tools_konsole_ps_toggle )
+
+/*
+*	psay :: report :: toggle
+*
+*	toggles the report interface
+*
+*	@param  : ply pl
+*	@param  : str text
+*/
+
+local function tools_report_ps_toggle( pl, text )
+    local comp_args     = string.Split( text, ' ' )
+    local msg           = comp_args[ 1 ]:lower( )
+
+    if not cfg.report.binds.enabled then return end
+    if not cfg.report.binds.chat[ msg ] then return end
+
+    pl:ConCommand( pid( 'report' ) )
+
+    return ''
+end
+hook.Add( 'PlayerSay', pid( 'psay.report' ), tools_report_ps_toggle )
 
 /*
 *   psay :: pco :: toggle
@@ -2228,7 +2251,10 @@ hook.Add( 'PlayerSay', pid( 'psay.konsole' ), tools_konsole_ps_toggle )
 
 local function tools_pco_ps_toggle( pl, text )
     local comp_args     = string.Split( text, ' ' )
-    if comp_args[ 1 ] ~= cfg.pco.binds.chat then return end
+    local msg           = comp_args[ 1 ]:lower( )
+
+    if not cfg.pco.binds.enabled then return end
+    if not cfg.pco.binds.chat[ msg ] then return end
 
     if not helper:cvar_bool( 'rlib_pco' ) then
         rlib:log( 6, lang( 'pco_disabled_debug' ) )
@@ -2254,7 +2280,10 @@ hook.Add( 'PlayerSay', pid( 'tools.pco.psay.toggle' ), tools_pco_ps_toggle )
 
 local function tools_lang_ps_toggle( pl, text )
     local comp_args     = string.Split( text, ' ' )
-    if comp_args[ 1 ]:lower( ) ~= cfg.languages.binds.chat then return end
+    local msg           = comp_args[ 1 ]:lower( )
+
+    if not cfg.languages.binds.enabled then return end
+    if not cfg.languages.binds.chat[ msg ] then return end
 
     net.Start   ( 'rlib.tools.lang'     )
     net.Send    ( pl                    )
@@ -2274,7 +2303,10 @@ hook.Add( 'PlayerSay', pid( 'tools.lang.psay.toggle' ), tools_lang_ps_toggle )
 
 local function tools_dc_ps_toggle( pl, text )
     local comp_args     = string.Split( text, ' ' )
-    if comp_args[ 1 ]:lower( ) ~= cfg.dc.binds.chat then return end
+    local msg           = comp_args[ 1 ]:lower( )
+
+    if not cfg.dc.binds.enabled then return end
+    if not cfg.dc.binds.chat[ msg ] then return end
 
     net.Start   ( 'rlib.tools.dc'       )
     net.Send    ( pl                    )
@@ -2296,7 +2328,8 @@ local function tools_rmain_ps_toggle( pl, text )
     local comp_args     = string.Split( text, ' ' )
     local msg           = comp_args[ 1 ]:lower( )
 
-    if not table.HasValue( cfg.rmain.binds.chat, msg ) then return end
+    if not cfg.rmain.binds.enabled then return end
+    if not cfg.rmain.binds.chat[ msg ] then return end
 
     net.Start   ( 'rlib.tools.rmain'    )
     net.Send    ( pl                    )
@@ -2319,10 +2352,14 @@ local function tools_rcfg_ps_toggle( pl, text )
     local msg           = comp_args[ 1 ]:lower( )
 
     if not cfg.rcfg.binds.enabled then return end
-    if not table.HasValue( cfg.rcfg.binds.chat, msg ) then return end
+    if not cfg.rcfg.binds.chat[ msg ] then return end
 
-    net.Start   ( 'rlib.tools.rcfg'     )
-    net.Send    ( pl                    )
+    rlib.msg:route( pl, false, rlib.manifest.name, lang( 'lib_addons_opening' ) )
+
+    timer.Simple( 0.5, function( )
+        net.Start   ( 'rlib.tools.rcfg'     )
+        net.Send    ( pl                    )
+    end )
 
     return ''
 end
@@ -2341,7 +2378,8 @@ local function tools_mviewer_ps_toggle( pl, text )
     local comp_args     = string.Split( text, ' ' )
     local msg           = comp_args[ 1 ]:lower( )
 
-    if not table.HasValue( cfg.mviewer.binds.chat, msg ) then return end
+    if not cfg.mviewer.binds.enabled then return end
+    if not cfg.mviewer.binds.chat[ msg ] then return end
 
     net.Start   ( 'rlib.tools.mdlviewer'    )
     net.Send    ( pl                        )

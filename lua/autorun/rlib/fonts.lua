@@ -103,6 +103,7 @@ reg_font( pref( 'rcfg.exit' ),                      { size = 24, weight = 800, a
 reg_font( pref( 'rcfg.resizer' ),                   { size = 24, weight = 100, antialias = true, font = 'Roboto Light' } )
 reg_font( pref( 'rcfg.icon' ),                      { size = 24, weight = 100, antialias = true, font = 'Roboto Light' } )
 reg_font( pref( 'rcfg.name' ),                      { size = 44, weight = 100, antialias = true, font = 'Roboto Light' } )
+reg_font( pref( 'rcfg.sub' ),                       { size = 16, weight = 100, antialias = true, font = 'Roboto Light' } )
 reg_font( pref( 'rcfg.title' ),                     { size = 16, weight = 600, antialias = true, font = 'Roboto Light' } )
 reg_font( pref( 'rcfg.entry' ),                     { size = 15, weight = 300, antialias = true, font = 'Roboto' } )
 reg_font( pref( 'rcfg.entry.label' ),               { size = 14, weight = 800, antialias = true, font = 'Roboto' } )
@@ -181,3 +182,14 @@ reg_font( pref( 'dc.name' ),                    { size = 24, weight = 100, antia
 reg_font( pref( 'dc.title' ),                   { size = 16, weight = 600, antialias = true, font = 'Roboto Light' } )
 reg_font( pref( 'dc.msg' ),                     { size = 16, weight = 600, antialias = true, font = 'Roboto Light' } )
 reg_font( pref( 'dc.btn' ),                     { size = 22, weight = 200, antialias = true, font = 'Roboto' } )
+
+/*
+*    fonts :: interface :: addons
+*/
+
+reg_font( pref( 'rcfg.item.name' ),             { size = 19, weight = 100, antialias = true, font = 'Roboto' } )
+reg_font( pref( 'rcfg.item.ver' ),              { size = 14, weight = 400, antialias = true, font = 'Roboto' } )
+reg_font( pref( 'rcfg.item.rel' ),              { size = 14, weight = 200, antialias = true, font = 'Roboto' } )
+reg_font( pref( 'rcfg.item.desc' ),             { size = 15, weight = 100, antialias = true, font = 'Roboto Lt' } )
+reg_font( pref( 'rcfg.item.hover' ),            { size = 15, weight = 300, antialias = true, font = 'Roboto Lt' } )
+reg_font( pref( 'rcfg.footer.count' ),          { size = 14, weight = 400, antialias = true, font = 'Roboto' } )
