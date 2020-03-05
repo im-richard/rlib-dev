@@ -4171,7 +4171,7 @@ local uclass = { }
     *
     *   displays tooltips via the default gmod method
     *
-    *   @assoc  : tip
+    *   @assoc  : tooltip
     *   @alias  : gtooltip, gtip
     *
     *   @param  : str str
@@ -4189,13 +4189,17 @@ local uclass = { }
     *   displays tooltips
     *   custom tooltip alternative to the default gmod SetTooltip func
     *
+    *   @assoc  : gtooltip
     *   @alias  : tooltip, tip
     *
     *   @param  : str str
+    *   @param  : clr clr_t
+    *   @param  : clr clr_i
+    *   @param  : clr clr_o
     */
 
     local pnl_tippy = false
-    function uclass.tooltip( pnl, str )
+    function uclass.tooltip( pnl, str, clr_t, clr_i, clr_o )
 
         /*
         *   validate tip
@@ -4204,31 +4208,53 @@ local uclass = { }
         if not isstring( str ) then return end
 
         /*
+        *   define clrs
+        */
+
+        local clr_text  = IsColor( clr_t ) and clr_t or cfg.tips.clrs.text
+        local clr_box   = IsColor( clr_i ) and clr_i or cfg.tips.clrs.inner
+        local clr_out   = IsColor( clr_o ) and clr_o or cfg.tips.clrs.outline
+
+        /*
         *   fn :: draw tooltip
         *
         *   @param  : pnl parent
-        *   @param  : str text
         */
 
         local function draw_tooltip( parent )
 
-            local pos_x, pos_y = input.GetCursorPos( )
+            /*
+            *   check :: existing tippy pnl
+            */
 
             if pnl_tippy and ui:valid( pnl_tippy ) then return end
 
-            surface.SetFont( pid( 'sys.tippy.text' ) )
+            /*
+            *   define :: cursor pos
+            */
 
+            local pos_x, pos_y = input.GetCursorPos( )
+
+            /*
+            *   set / get font text size
+            */
+
+            surface.SetFont( pid( 'sys.tippy.text' ) )
             local sz_w, sz_h    = surface.GetTextSize( str )
             sz_w                = sz_w + 50
 
-            pnl_tippy           = ui.new( 'pnl', pnl     )
-            :nodraw             (                           )
-            :pos                ( pos_x + 10, pos_y - 35    )
-            :size               ( sz_w, 25                  )
-            :popup              (                           )
-            :front              (                           )
-            :m2f                (                           )
-            :var                ( 'TipWidth', sz_w          )
+            /*
+            *   create pnl
+            */
+
+            pnl_tippy           = ui.new( 'pnl', pnl            )
+            :nodraw             (                               )
+            :pos                ( pos_x + 10, pos_y - 35        )
+            :size               ( sz_w, 25                      )
+            :popup              (                               )
+            :front              (                               )
+            :m2f                (                               )
+            :var                ( 'TipWidth', sz_w              )
 
                                 :logic( function( s )
 
@@ -4260,9 +4286,9 @@ local uclass = { }
                                 end )
 
                                 :draw( function( s, w, h )
-                                    design.rbox( 4, 0, 0, sz_w, 25, cfg.tips.clrs.outline )
-                                    design.rbox( 4, 1, 1, sz_w - 2, 25 - 2, cfg.tips.clrs.inner )
-                                    draw.SimpleText( string.format( '%s %s' , helper.get:utf8char( cfg.tips.clrs.utf ), str ), pid( 'sys.tippy.text' ), 15, ( 25 / 2 ), cfg.tips.clrs.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    design.rbox( 4, 0, 0, sz_w, 25, clr_out )
+                                    design.rbox( 4, 1, 1, sz_w - 2, 25 - 2, clr_box )
+                                    draw.SimpleText( string.format( '%s %s' , helper.get:utf8char( cfg.tips.clrs.utf ), str ), pid( 'sys.tippy.text' ), 15, ( 25 / 2 ), clr_text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                 end )
 
         end
