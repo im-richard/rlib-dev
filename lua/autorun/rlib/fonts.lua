@@ -79,6 +79,7 @@ reg_font( pref( 'sys.dialog.slider.title' ),        { size = 23, weight = 100, a
 reg_font( pref( 'sys.dialog.slider.msg' ),          { size = 17, weight = 300, antialias = true, shadow = true, font = 'Roboto' } )
 reg_font( pref( 'sys.dialog.slider.exit' ),         { size = 42, weight = 800, antialias = true, shadow = false, font = 'Segoe UI Light' } )
 reg_font( pref( 'sys.notify.text' ),                { size = 18, weight = 400, antialias = true, shadow = false, font = 'Roboto Light' } )
+reg_font( pref( 'sys.tippy.text' ),                 { size = 15, weight = 200, antialias = true, shadow = false, font = 'Roboto Light' } )
 
 /*
 *    fonts :: interface :: about
@@ -110,6 +111,12 @@ reg_font( pref( 'rcfg.entry.label' ),               { size = 14, weight = 800, a
 reg_font( pref( 'rcfg.entry.value' ),               { size = 16, weight = 200, antialias = true, font = 'Roboto Light' } )
 reg_font( pref( 'rcfg.status' ),                    { size = 14, weight = 800, antialias = true, font = 'Roboto' } )
 reg_font( pref( 'rcfg.status.conn' ),               { size = 14, weight = 400, antialias = true, font = 'Roboto' } )
+reg_font( pref( 'rcfg.item.name' ),                 { size = 19, weight = 100, antialias = true, font = 'Roboto' } )
+reg_font( pref( 'rcfg.item.ver' ),                  { size = 14, weight = 400, antialias = true, font = 'Roboto' } )
+reg_font( pref( 'rcfg.item.rel' ),                  { size = 14, weight = 200, antialias = true, font = 'Roboto' } )
+reg_font( pref( 'rcfg.item.desc' ),                 { size = 15, weight = 100, antialias = true, font = 'Roboto Lt' } )
+reg_font( pref( 'rcfg.item.hover' ),                { size = 15, weight = 300, antialias = true, font = 'Roboto Lt' } )
+reg_font( pref( 'rcfg.footer.count' ),              { size = 14, weight = 400, antialias = true, font = 'Roboto' } )
 
 /*
 *    fonts :: interface :: lang
@@ -182,14 +189,3 @@ reg_font( pref( 'dc.name' ),                    { size = 24, weight = 100, antia
 reg_font( pref( 'dc.title' ),                   { size = 16, weight = 600, antialias = true, font = 'Roboto Light' } )
 reg_font( pref( 'dc.msg' ),                     { size = 16, weight = 600, antialias = true, font = 'Roboto Light' } )
 reg_font( pref( 'dc.btn' ),                     { size = 22, weight = 200, antialias = true, font = 'Roboto' } )
-
-/*
-*    fonts :: interface :: addons
-*/
-
-reg_font( pref( 'rcfg.item.name' ),             { size = 19, weight = 100, antialias = true, font = 'Roboto' } )
-reg_font( pref( 'rcfg.item.ver' ),              { size = 14, weight = 400, antialias = true, font = 'Roboto' } )
-reg_font( pref( 'rcfg.item.rel' ),              { size = 14, weight = 200, antialias = true, font = 'Roboto' } )
-reg_font( pref( 'rcfg.item.desc' ),             { size = 15, weight = 100, antialias = true, font = 'Roboto Lt' } )
-reg_font( pref( 'rcfg.item.hover' ),            { size = 15, weight = 300, antialias = true, font = 'Roboto Lt' } )
-reg_font( pref( 'rcfg.footer.count' ),          { size = 14, weight = 400, antialias = true, font = 'Roboto' } )

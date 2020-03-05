@@ -4169,20 +4169,119 @@ local uclass = { }
     /*
     *   ui :: class :: Panel :: SetTooltip
     *
-    *   displays tooltips
-    *   to be updated in future for brand new tooltip sys
+    *   displays tooltips via the default gmod method
     *
-    *   @alias  : tooltip, tipster, tip
+    *   @assoc  : tip
+    *   @alias  : gtooltip, gtip
     *
     *   @param  : str str
     */
 
-    function uclass.tooltip( pnl, str )
+    function uclass.gtooltip( pnl, str )
         str = isstring( str ) and str or ''
         pnl:SetTooltip( str )
     end
-    uclass.tipster    = uclass.tooltip
-    uclass.tip        = uclass.tooltip
+    uclass.gtip     = uclass.gtooltip
+
+    /*
+    *   ui :: class :: Panel :: Tooltips
+    *
+    *   displays tooltips
+    *   custom tooltip alternative to the default gmod SetTooltip func
+    *
+    *   @alias  : tooltip, tip
+    *
+    *   @param  : str str
+    */
+
+    local pnl_tippy = false
+    function uclass.tooltip( pnl, str )
+
+        /*
+        *   validate tip
+        */
+
+        if not isstring( str ) then return end
+
+        /*
+        *   fn :: draw tooltip
+        *
+        *   @param  : pnl parent
+        *   @param  : str text
+        */
+
+        local function draw_tooltip( parent )
+
+            local pos_x, pos_y = input.GetCursorPos( )
+
+            if pnl_tippy and ui:valid( pnl_tippy ) then return end
+
+            surface.SetFont( pid( 'sys.tippy.text' ) )
+
+            local sz_w, sz_h    = surface.GetTextSize( str )
+            sz_w                = sz_w + 50
+
+            pnl_tippy           = ui.new( 'pnl', pnl     )
+            :nodraw             (                           )
+            :pos                ( pos_x + 10, pos_y - 35    )
+            :size               ( sz_w, 25                  )
+            :popup              (                           )
+            :front              (                           )
+            :m2f                (                           )
+            :var                ( 'TipWidth', sz_w          )
+
+                                :logic( function( s )
+
+                                    /*
+                                    *   requires parent pnl
+                                    */
+
+                                    -- pnl == hobered button
+
+                                    if not ui:valid( parent ) then
+                                        ui:destroy( pnl_tippy )
+                                        return
+                                    end
+
+                                    /*
+                                    *   update mouse pos
+                                    */
+
+                                    pos_x, pos_y    = input.GetCursorPos( )
+                                    local wid       = s.TipWidth or 0
+
+                                    if pos_y < 45 then
+                                        pos_y = 45
+                                    elseif pos_y > ScrH( ) then
+                                        pos_y = ScrH( ) - 45
+                                    end
+
+                                    s:SetPos( pos_x + ( 15 / 2 ) - ( wid / 2 ), pos_y - 45 )
+                                end )
+
+                                :draw( function( s, w, h )
+                                    design.rbox( 4, 0, 0, sz_w, 25, cfg.tips.clrs.outline )
+                                    design.rbox( 4, 1, 1, sz_w - 2, 25 - 2, cfg.tips.clrs.inner )
+                                    draw.SimpleText( string.format( '%s %s' , helper.get:utf8char( cfg.tips.clrs.utf ), str ), pid( 'sys.tippy.text' ), 15, ( 25 / 2 ), cfg.tips.clrs.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                end )
+
+        end
+
+
+        pnl.OnCursorEntered = function( s )
+            draw_tooltip    ( s )
+            s.hover         = true
+        end
+        pnl.OnCursorExited = function( s )
+            if s:IsChildHovered( ) then
+                return
+            end
+
+            ui:destroy      ( pnl_tippy )
+            s.hover         = false
+        end
+    end
+    uclass.tip      = uclass.tooltip
 
     /*
     *   ui :: class :: DModel :: SetModel

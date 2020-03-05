@@ -548,6 +548,23 @@ end
     }
 
 /*
+*   tips
+*
+*   settings related to interface tips
+*/
+
+    cfg.tips =
+    {
+        clrs =
+        {
+            outline         = Color( 55, 55, 55, 255 ),
+            inner           = Color( 35, 35, 35, 255 ),
+            text            = Color( 255, 255, 255, 255 ),
+            utf             = 10045,
+        }
+    }
+
+/*
 *   sendcmsg
 *
 *   @note   : will be deprecated in a future release
