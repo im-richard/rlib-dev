@@ -98,7 +98,7 @@ local function netlib_chatmsg( len, ply )
     if not msg then return end
     chat.AddText( unpack( msg ) )
 end
-net.Receive( 'rlib.chatmsg', netlib_chatmsg )
+net.Receive( 'rlib.chat.msg', netlib_chatmsg )
 
 /*
 *   netlib :: chatconsole
@@ -112,7 +112,7 @@ local function netlib_chatconsole( len, ply )
     table.insert( msg, '\n' )
     MsgC( Color( 255, 255, 255 ), unpack( msg ) )
 end
-net.Receive( 'rlib.chatconsole', netlib_chatconsole )
+net.Receive( 'rlib.chat.console', netlib_chatconsole )
 
 /*
 *   netlib :: notify

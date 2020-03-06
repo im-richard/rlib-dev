@@ -133,13 +133,13 @@ end
 util.AddNetworkString( 'rlib.udm.check'             )
 util.AddNetworkString( 'rlib.konsole'               )
 util.AddNetworkString( 'rlib.debug.console'         )
-util.AddNetworkString( 'rlib.debug.eventlistener'   )
+util.AddNetworkString( 'rlib.debug.listener'        )
 util.AddNetworkString( 'rlib.debug.ui'              )
-util.AddNetworkString( 'rlib.report'                )
-util.AddNetworkString( 'rlib.chatmsg'               )
-util.AddNetworkString( 'rlib.chatconsole'           )
+util.AddNetworkString( 'rlib.chat.msg'              )
+util.AddNetworkString( 'rlib.chat.console'          )
 util.AddNetworkString( 'rlib.user'                  )
-util.AddNetworkString( 'rlib.user.init'             )
+util.AddNetworkString( 'rlib.user.join'             )
+util.AddNetworkString( 'rlib.user.update'           )
 util.AddNetworkString( 'rlib.rsay'                  )
 util.AddNetworkString( 'rlib.tools.pco'             )
 util.AddNetworkString( 'rlib.tools.lang'            )
@@ -147,6 +147,7 @@ util.AddNetworkString( 'rlib.tools.dc'              )
 util.AddNetworkString( 'rlib.tools.rmain'           )
 util.AddNetworkString( 'rlib.tools.rcfg'            )
 util.AddNetworkString( 'rlib.tools.mdlviewer'       )
+util.AddNetworkString( 'rlib.tools.report'          )
 util.AddNetworkString( 'rlib.notify'                )
 util.AddNetworkString( 'rlib.notify.slider'         )
 
@@ -162,14 +163,14 @@ local pmeta = FindMetaTable( 'Player' )
 
 function base:broadcast( ... )
     local args      = { ... }
-    net.Start       ( 'rlib.chatmsg'        )
+    net.Start       ( 'rlib.chat.msg'       )
     net.WriteTable  ( args                  )
     net.Broadcast   (                       )
 end
 
 function pmeta:msg( ... )
     local args      = { ... }
-    net.Start       ( 'rlib.chatmsg'        )
+    net.Start       ( 'rlib.chat.msg'       )
     net.WriteTable  ( args                  )
     net.Send        ( self                  )
 end
@@ -190,7 +191,7 @@ end
 
 function pmeta:sendconsole( ... )
     local args      = { ... }
-    net.Start       ( 'rlib.chatconsole'    )
+    net.Start       ( 'rlib.chat.console'   )
     net.WriteTable  ( args                  )
     net.Send        ( self                  )
 end
@@ -239,14 +240,14 @@ end
 
 gameevent.Listen( 'player_connect' )
 hook.Add( 'player_connect', pid( 'event.player_connect' ), function( data )
-    net.Start       ( 'rlib.debug.eventlistener' )
-    net.WriteBool   ( true              )
-    net.WriteBool   ( data.bot          )
-    net.WriteString ( data.name         )
-    net.WriteString ( data.address      )
-    net.WriteString ( data.networkid    )
-    net.WriteString ( 'false'           )
-    net.Broadcast   (                   )
+    net.Start       ( 'rlib.debug.listener' )
+    net.WriteBool   ( true                  )
+    net.WriteBool   ( data.bot              )
+    net.WriteString ( data.name             )
+    net.WriteString ( data.address          )
+    net.WriteString ( data.networkid        )
+    net.WriteString ( 'false'               )
+    net.Broadcast   (                       )
 
     sys.connections = ( sys.connections or 0 ) + 1
     sys.initialized = true
@@ -256,14 +257,14 @@ end )
 
 gameevent.Listen( 'player_disconnect' )
 hook.Add( 'player_disconnect', pid( 'event.player_disconnect' ), function( data )
-    net.Start       ( 'rlib.debug.eventlistener' )
-    net.WriteBool   ( false             )
-    net.WriteBool   ( data.bot          )
-    net.WriteString ( data.name         )
-    net.WriteString ( 'false'           )
-    net.WriteString ( data.networkid    )
-    net.WriteString ( data.reason       )
-    net.Broadcast   (                   )
+    net.Start       ( 'rlib.debug.listener' )
+    net.WriteBool   ( false                 )
+    net.WriteBool   ( data.bot              )
+    net.WriteString ( data.name             )
+    net.WriteString ( 'false'               )
+    net.WriteString ( data.networkid        )
+    net.WriteString ( data.reason           )
+    net.Broadcast   (                       )
 
     storage:logconn( 2, true, '[ Listener ] USER:( %s ) STEAM_ID:( %s ) REASON:( %s )', data.name, data.networkid, ( tostring( data.reason ) or 'none' ) )
 end )
@@ -1108,14 +1109,14 @@ hook.Add( 'ShutDown', pid( 'server.shutdown' ), shutdown )
 */
 
 local function onPlayerSpawn( pl )
-    timex.simple( pid( 'pl.spawn' ), 7, function( )
+    timex.simple( pid( 'pl.spawn' ), 3, function( )
         if not helper.ok.ply( pl ) then return end
 
         if helper:cvar_bool( 'rlib_pco_autogive' ) then
             tools.pco:Run( pl, true )
         end
 
-        net.Start       ( 'rlib.user.init'      )
+        net.Start       ( 'rlib.user.update'    )
         net.Send        ( pl                    )
 
         if not access.admins[ pl:SteamID( ) ] then return end
@@ -2033,7 +2034,7 @@ local function netlib_report( len, pl )
     local authcode          = net.ReadString( )
 
     if not access:bIsRoot( pl ) then
-        net.Start           ( 'rlib.report'                 )
+        net.Start           ( 'rlib.tools.report'           )
         net.WriteBool       ( false                         )
         net.WriteString     ( lang( 'reports_no_access' )   )
         net.Send            ( pl                            )
@@ -2089,19 +2090,19 @@ local function netlib_report( len, pl )
             response    = json_body.response
         end
 
-        net.Start       ( 'rlib.report' )
-        net.WriteBool   ( is_success    )
-        net.WriteString ( response      )
-        net.Send        ( pl            )
+        net.Start       ( 'rlib.tools.report'   )
+        net.WriteBool   ( is_success            )
+        net.WriteString ( response              )
+        net.Send        ( pl                    )
     end, function( err )
-        net.Start       ( 'rlib.report' )
-        net.WriteBool   ( false         )
-        net.WriteString ( err           )
-        net.Send        ( pl            )
+        net.Start       ( 'rlib.tools.report'   )
+        net.WriteBool   ( false                 )
+        net.WriteString ( err                   )
+        net.Send        ( pl                    )
     end )
 
 end
-net.Receive( 'rlib.report', netlib_report )
+net.Receive( 'rlib.tools.report', netlib_report )
 
 /*
 *   netlib :: udm check

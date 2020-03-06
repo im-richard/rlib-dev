@@ -583,7 +583,7 @@ function utils.cc_rpanels( pl, cmd, args )
     *   loop registered panels table
     */
 
-    local cat_islisted  = false
+    local bCatListed    = false
     local cat_id        = ''
     local tb_pnls       = base.p
 
@@ -593,11 +593,11 @@ function utils.cc_rpanels( pl, cmd, args )
 
     for a, b in pairs( tb_pnls ) do
 
-        cat_islisted = a ~= cat_id and false or cat_islisted
+        bCatListed = a ~= cat_id and false or bCatListed
 
         for k, v in pairs( b ) do
 
-            if not cat_islisted then
+            if not bCatListed then
                 local l_category = sf( ' %s', a )
                 base:console( pl, lang( 'sym_sp' ) )
 
@@ -609,7 +609,7 @@ function utils.cc_rpanels( pl, cmd, args )
                 base:console( pl, Color( 255, 255, 255 ), c0_out )
                 base:console( pl, lang( 'sym_sp' ) )
 
-                cat_islisted, cat_id = true, a
+                bCatListed, cat_id = true, a
             end
 
             local i = 0
@@ -650,7 +650,7 @@ function utils.cc_rpanels( pl, cmd, args )
 end
 
 /*
-*   netlib :: debug ui
+*   netlib :: debug :: ui
 *
 *   prompts an in-game notification for issues
 *
@@ -684,24 +684,34 @@ end
 net.Receive( 'rlib.user', netlib_user )
 
 /*
-*   netlib :: user management update
+*   netlib :: user :: update
 *
 *   only update the table when it has been modified
+*
+*   @note   : 3 second delay from server
 */
 
-local function netlib_user_init( )
+local function netlib_user_update( )
     if not helper.ok.ply( LocalPlayer( ) ) then return end
+    local pl = LocalPlayer( )
+
     base.cvar:register( )
+
+    /*
+    *   create ply var table
+    */
+
+    pl.rlib         = pl.rlib or { }
 end
-net.Receive( 'rlib.user.init', netlib_user_init )
+net.Receive( 'rlib.user.update', netlib_user_update )
 
 /*
-*   netlib :: event listener
+*   netlib :: debug :: event listener
 * 
 *   output to konsole when a player connects or disconnects from the server.
 */
 
-local function netlib_debug_listen( )
+local function netlib_debug_listener( )
     local is_join   = net.ReadBool( )
     local is_bot    = net.ReadBool( )
     local target    = net.ReadString( )
@@ -726,7 +736,7 @@ local function netlib_debug_listen( )
 
     end
 end
-net.Receive( 'rlib.debug.eventlistener', netlib_debug_listen )
+net.Receive( 'rlib.debug.listener', netlib_debug_listener )
 
 /*
 *   rlib :: initialize
@@ -794,7 +804,6 @@ local i_rlib_think = 0
 local function think_pl_res( )
     if i_rlib_think > CurTime( ) then return end
     if not helper.ok.ply( LocalPlayer( ) ) then return end
-
     local pl = LocalPlayer( )
 
     -- rather than painting positions, just store the players old monitor resolution
@@ -805,7 +814,7 @@ local function think_pl_res( )
 
     i_rlib_think = CurTime( ) + 0.2
 end
-hook.Add( 'Think', pid( 'think.plres' ), think_pl_res )
+hook.Add( 'Think', pid( 'think.pl.res' ), think_pl_res )
 
 /*
 *   cvars :: onchangecb

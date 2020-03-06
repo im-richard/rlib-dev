@@ -1167,6 +1167,7 @@ local function storage_struct_defs( mod_id )
         bInitialized        = false,
         initialize          = { },
         action              = { },
+        usrdef              = { },
         cc                  = { },
         ent                 = { },
         binds               = { },

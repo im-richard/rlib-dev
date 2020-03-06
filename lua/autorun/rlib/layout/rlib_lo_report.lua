@@ -447,10 +447,10 @@ function PANEL:Init( )
                                         self.l_err:SetText( lang( 'reports_please_wait' ) )
                                     end
 
-                                    net.Start           ( 'rlib.report'     )
-                                    net.WriteString     ( field_authcode    )
-                                    net.WriteString     ( field_feedback    )
-                                    net.SendToServer    (                   )
+                                    net.Start           ( 'rlib.tools.report'   )
+                                    net.WriteString     ( field_authcode        )
+                                    net.WriteString     ( field_feedback        )
+                                    net.SendToServer    (                       )
 
                                     LocalPlayer( ).rlib_report_cooldown = CurTime( ) + 300
                                 end )
@@ -467,7 +467,7 @@ function PANEL:Init( )
             self.l_err:SetText( response )
         end
     end
-    net.Receive( 'rlib.report', netlib_report )
+    net.Receive( 'rlib.tools.report', netlib_report )
 
 end
 
