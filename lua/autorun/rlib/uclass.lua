@@ -4262,8 +4262,6 @@ local uclass = { }
                                     *   requires parent pnl
                                     */
 
-                                    -- pnl == hobered button
-
                                     if not ui:valid( parent ) then
                                         ui:destroy( pnl_tippy )
                                         return
@@ -4273,14 +4271,10 @@ local uclass = { }
                                     *   update mouse pos
                                     */
 
-                                    pos_x, pos_y    = input.GetCursorPos( )
                                     local wid       = s.TipWidth or 0
-
-                                    if pos_y < 45 then
-                                        pos_y = 45
-                                    elseif pos_y > ScrH( ) then
-                                        pos_y = ScrH( ) - 45
-                                    end
+                                    pos_x, pos_y    = input.GetCursorPos( )
+                                    pos_x           = math.Clamp( pos_x, ( sz_w / 2 ) - 10, ScrW( ) - ( sz_w / 2 ) )
+                                    pos_y           = math.Clamp( pos_y, 45, ScrH( ) - 0 )
 
                                     s:SetPos( pos_x + ( 15 / 2 ) - ( wid / 2 ), pos_y - 45 )
                                 end )
@@ -4324,8 +4318,8 @@ local uclass = { }
         bodygrp     = isstring( bodygrp ) and bodygrp or ''
         pnl:SetModel( str, skin, bodygrp )
     end
-    uclass.mdl    = uclass.model
-    uclass.setmdl = uclass.model
+    uclass.mdl      = uclass.model
+    uclass.setmdl   = uclass.model
 
     /*
     *   ui :: class :: DModel :: SetFOV
