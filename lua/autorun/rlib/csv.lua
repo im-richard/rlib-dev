@@ -2120,6 +2120,32 @@ end
 net.Receive( 'rlib.udm.check', netlib_udm_check )
 
 /*
+*   advanced logging which allows for any client-side errors to be sent to the server as well.
+*
+*   @param  : int cat
+*   @param  : str msg
+*   @param  : varg { ... }
+*/
+
+local function log_netmsg( cat, msg, ... )
+    cat     = isnumber( cat ) and cat or 1
+    msg     = isstring( msg ) and msg or lang( 'msg_invalid' )
+
+    if SERVER then
+        msg = msg .. table.concat( { ... } , ', ' )
+    end
+
+    if CLIENT then
+        net.Start           ( 'rlib.debug.console'  )
+        net.WriteInt        ( cat, 4                )
+        net.WriteString     ( msg                   )
+        net.SendToServer    (                       )
+    end
+
+    base:logs_beautify( cat, msg )
+end
+
+/*
 *   netlib :: rlib.debug.console
 */
 
@@ -2127,7 +2153,7 @@ local function netlib_debug_console( len, pl )
     local cat   = net.ReadInt( 4 )
     local msg   = net.ReadString( )
 
-    base:console_format( cat, msg )
+    log_netmsg( cat, msg )
 end
 net.Receive( 'rlib.debug.console', netlib_debug_console )
 

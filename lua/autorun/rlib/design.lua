@@ -535,6 +535,8 @@ end
 *   displays a title and sets a category-style box to display to the right of the title with text being
 *   autosized to fit within
 *
+*   @todo   : make a little more simple for next version
+*
 *   @param  : str title
 *   @param  : str title_font
 *   @param  : str cat
@@ -546,9 +548,11 @@ end
 *   @param  : int pos_y
 *   @param  : int offset_x
 *   @param  : int offset_y
+*   @param  : int cat_w_os
+*   @param  : int text_os_w
 */
 
-function design.title_boxcat( title, title_fnt, cat, cat_fnt, t_clr, b_clr, c_clr, pos_x, pos_y, offset_x, offset_y )
+function design.title_boxcat( title, title_fnt, cat, cat_fnt, t_clr, b_clr, c_clr, pos_x, pos_y, offset_x, offset_y, cat_w_os, text_os_w )
     if not title then return end
     if not title_fnt then return end
 
@@ -561,6 +565,8 @@ function design.title_boxcat( title, title_fnt, cat, cat_fnt, t_clr, b_clr, c_cl
     pos_y       = pos_y or 15
     offset_x    = offset_x or 0
     offset_y    = offset_y or 0
+    cat_w_os    = cat_w_os or 20
+    text_os_w   = text_os_w or 0
 
     /*
     *   title variables
@@ -568,9 +574,9 @@ function design.title_boxcat( title, title_fnt, cat, cat_fnt, t_clr, b_clr, c_cl
 
     surface.SetFont( title_fnt )
 
-    title = isstring( title ) and title or tostring( title )
-    local title_w, title_h = surface.GetTextSize( title )
-    title_w = title_w + offset_x + 10
+    title                   = isstring( title ) and title or tostring( title )
+    local title_w, title_h  = surface.GetTextSize( title )
+    title_w                 = title_w + offset_x + 10
 
     /*
     *   cat variables
@@ -578,10 +584,10 @@ function design.title_boxcat( title, title_fnt, cat, cat_fnt, t_clr, b_clr, c_cl
 
     surface.SetFont( cat_fnt )
 
-    cat = isstring( cat ) and cat or tostring( cat )
-    local cat_w, cat_h = surface.GetTextSize( cat )
-    cat_h = cat_h + offset_y
-    cat_w = cat_w + 17
+    cat                     = isstring( cat ) and cat or tostring( cat )
+    local cat_w, cat_h      = surface.GetTextSize( cat )
+    cat_h                   = cat_h + offset_y
+    cat_w                   = cat_w + cat_w_os
 
     /*
     *   draw
@@ -589,7 +595,7 @@ function design.title_boxcat( title, title_fnt, cat, cat_fnt, t_clr, b_clr, c_cl
 
     draw.SimpleText( title, title_fnt, pos_x, pos_y, t_clr, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
     draw.RoundedBox( 4, pos_x + title_w, pos_y - ( cat_h / 2 ), cat_w, cat_h, b_clr )
-    draw.SimpleText( cat:upper( ), cat_fnt, pos_x + title_w + ( cat_w / 2 ) - 1, pos_y + 1, c_clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+    draw.SimpleText( cat:upper( ), cat_fnt, pos_x + title_w + ( cat_w / 2 ) - text_os_w, pos_y, c_clr, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
 end
 
 /*
