@@ -4255,6 +4255,8 @@ local uclass = { }
             :front              (                               )
             :m2f                (                               )
             :var                ( 'TipWidth', sz_w              )
+            :zpos               ( 9999                          )
+            :drawtop            ( true                          )
 
                                 :logic( function( s )
 
