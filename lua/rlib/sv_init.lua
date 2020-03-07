@@ -186,9 +186,10 @@ hook.Add( pid( 'modules.load.post' ), pid( 'modules.writedata' ), function( ) ba
 *   validation also requires mod.parent.sys otherwise validation will fail
 *
 *   @param  : tbl source
+*   @param  : bool bBypass
 */
 
-function base:module_validate( source )
+function base:module_validate( source, bBypass )
     timex.simple( pid( 'modules.validate' ), 0, function( )
         if source and not istable( source ) then
             local trcback = debug.traceback( )
@@ -216,14 +217,36 @@ function base:module_validate( source )
 
             local libreq = v.libreq
             if not libreq then continue end
-            if v.errorlog and v.errorlog.bLibOutdated then continue end
+            if not bBypass and ( v.errorlog and v.errorlog.bLibOutdated ) then continue end
 
             local bHasError = false
             local mreq_ver  = rlib.get:version( v, true )
             local rlib_ver  = rlib.get:version( )
 
-            if not bHasError and ( ( mreq_ver.major > rlib_ver.major ) or ( mreq_ver.major == rlib_ver.major ) and ( mreq_ver.minor > rlib_ver.minor ) or ( mreq_ver.major == rlib_ver.major ) and ( mreq_ver.minor > rlib_ver.minor ) and ( mreq_ver.patch > rlib_ver.patch ) ) then
+            /*
+            *   major mismatch
+            */
+
+            if ( mreq_ver.major > rlib_ver.major ) then
                 bHasError = true
+            elseif ( mreq_ver.major == rlib_ver.major ) then
+
+                /*
+                *   minor mismatch
+                */
+
+                if mreq_ver.minor > rlib_ver.minor then
+                    bHasError = true
+                elseif  mreq_ver.minor == rlib_ver.minor then
+
+                    /*
+                    *   patch mismatch
+                    */
+
+                    if mreq_ver.patch > rlib_ver.patch then
+                        bHasError = true
+                    end
+                end
             end
 
             if bHasError then
