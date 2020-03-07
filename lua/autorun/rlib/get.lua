@@ -196,6 +196,31 @@ function base.get:versionstr( mnfst )
 end
 
 /*
+*   get :: version 2 string
+*
+*   converts an rlib version table to human readable format
+*
+*   @note   : will replace get:version and get:ver2str soon
+*
+*   @ex     : { 3, 0, 2 }
+*             3.0.2
+*
+*   @return : str
+*/
+
+function base.get:ver2str( src )
+
+    if isstring( src ) then
+        return src
+    elseif istable( src ) then
+        local major, minor, patch = src.major or src[ 1 ] or 1, src.minor or src[ 2 ] or 0, src.patch or src[ 3 ] or 0
+        return sf( '%i.%i.%i', major, minor, patch )
+    end
+
+    return '1.0.0'
+end
+
+/*
 *   get :: os
 *
 *   return the operating system for the server the script is running on

@@ -237,7 +237,7 @@ function base:module_validate( source, bBypass )
 
                 if mreq_ver.minor > rlib_ver.minor then
                     bHasError = true
-                elseif  mreq_ver.minor == rlib_ver.minor then
+                elseif mreq_ver.minor == rlib_ver.minor then
 
                     /*
                     *   patch mismatch
@@ -397,19 +397,39 @@ function base.cc_errlog( pl, cmd, args )
     *   functionality
     */
 
-    local id_cat     = base.manifest.name or lang( 'lib_name' )
-    local id_subcat  = lang( 'modules' )
-    local id_sublvl  = lang( 'errorlog' )
-
     rlib:console( pl, '\n' )
+    rlib:console( pl, Color( 255, 255, 0 ), rlib.manifest.name, Color( 255, 0, 255 ), ' » ', Color( 255, 255, 255 ), 'Errorlogs' )
+    rlib:console( pl, lang( 'sym_sp' ) )
 
-    local c0_lbl    = sf( ' %s » %s » %s', id_cat, id_subcat, id_sublvl )
-    rlib:console( pl, Color( 255, 0, 0 ), c0_lbl )
+    /*
+    *   outdated libraries
+    */
+
+    rlib:console( pl, Color( 255, 255, 0 ), '» ', Color( 255, 255, 255 ), 'Outdated\n' )
+    rlib:console( pl, Color( 255, 255, 255 ), 'The following modules require a more recent version of rlib to function properly' )
+    rlib:console( pl, lang( 'sym_sp' ) )
+    rlib:console( pl, 0 )
+
+    local c1_lbl    = sf( '%-20s', 'Module'         )
+    local c2_lbl    = sf( '%-20s', 'Module Version' )
+    local c3_lbl    = sf( '%-20s', 'Lib Version'   )
+    local c4_lbl    = sf( '%-20s', 'Lib Required'  )
+
+    rlib:console( pl, Color( 255, 255, 0 ), c1_lbl, Color( 255, 255, 255 ), c2_lbl, Color( 255, 0, 0 ), c3_lbl, Color( 255, 255, 255 ), c4_lbl )
+    rlib:console( pl, lang( 'sym_sp' ) )
 
     for v in helper.get.data( base.modules, true ) do
         if not v.errorlog then continue end
-        print( v.name )
-        PrintTable( v.errorlog )
+
+        if v.errorlog.bLibOutdated then
+            local s1_data, s2_data, ss_data     = '', '', ''
+            s1_data                             = sf( '%-20s', v.name )
+            s2_data                             = sf( '%-20s', rlib.get:versionstr( v ) )
+            s3_data                             = sf( '%-20s', rlib.get:versionstr( ) )
+            s4_data                             = sf( '%-20s', rlib.get:ver2str( v.libreq ) )
+
+            rlib:console( pl, Color( 255, 255, 0 ), s1_data, Color( 255, 255, 255 ), s2_data, Color( 255, 0, 0 ), s3_data, Color( 255, 255, 255 ), s4_data )
+        end
     end
 
 end
