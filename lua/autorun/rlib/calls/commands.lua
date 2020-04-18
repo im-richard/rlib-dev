@@ -330,6 +330,19 @@ base.c.commands =
             [ 'paths' ]         = { flag = '-p', desc = 'display module install paths' },
         },
     },
+    [ 'rlib_modules_reload' ] =
+    {
+        enabled     = true,
+        id          = 'rlib.modules.reload',
+        name        = 'reload rcore modules',
+        desc        = 'reload all rcore modules',
+        scope       = 1,
+        official    = true,
+        ex =
+        {
+            'rlib.modules.reload',
+        },
+    },
     [ 'rlib_modules_errlog' ] =
     {
         enabled     = true,

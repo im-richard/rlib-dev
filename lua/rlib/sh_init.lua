@@ -145,28 +145,59 @@ end
 */
 
 function base:autoloader_configs( loc, mod_id )
+
+    /*
+    *   modules :: autoloader :: configs :: load_cfg
+    *
+    *   loads the specified file provided when looking through existing
+    *   files and folders
+    *
+    *   recursive
+    *
+    *   @ex     : load_cfg( 'path/to/folder', file.cfg, 'identix' )
+    *
+    *   @param  : str path
+    *   @param  : str File
+    *   @param  : str mod_id
+    */
+
+    local function load_cfg( path, File, mod )
+        local cfg_file = path .. '/' .. File
+        if SERVER then
+            if File:match( 'sh_' ) then
+                AddCSLuaFile( cfg_file )
+                include( cfg_file )
+            elseif File:match( 'sv_' ) then
+                include( cfg_file )
+            elseif File:match( 'cl_' ) then
+                AddCSLuaFile( cfg_file )
+            end
+            rlib:log( RLIB_LOG_DEBUG, '+ cfg [ %s ] for module [ %s ]', cfg_file, mod_id )
+        elseif CLIENT then
+            if File:match( 'sh_' ) then
+                include( cfg_file )
+            elseif File:match( 'cl_' ) then
+                include( cfg_file )
+            end
+            rlib:log( RLIB_LOG_DEBUG, '+ cfg [ %s ] for module [ %s ]', cfg_file, mod_id )
+        end
+    end
+
     local files, _ = file.Find( loc .. '/' .. '*', 'LUA' )
     for _, File in ipairs( files ) do
-        if ( File:match( '.lua' ) and ( File:match( 'config' ) or File:match( 'cfg' ) or File:match( 'settings' ) ) ) then
-            local cfg_file = loc .. '/' .. File
-            if SERVER then
-                if File:match( 'sh_' ) then
-                    AddCSLuaFile( cfg_file )
-                    include( cfg_file )
-                elseif File:match( 'sv_' ) then
-                    include( cfg_file )
-                elseif File:match( 'cl_' ) then
-                    AddCSLuaFile( cfg_file )
-                end
-                rlib:log( 6, '+ cfg [ %s ] for module [ %s ]', cfg_file, mod_id )
-            elseif CLIENT then
-                if File:match( 'sh_' ) then
-                    include( cfg_file )
-                elseif File:match( 'cl_' ) then
-                    include( cfg_file )
-                end
-                rlib:log( 6, '+ cfg [ %s ] for module [ %s ]', cfg_file, mod_id )
-            end
+        if not ( File:match( '.lua' ) ) then continue end
+        if not File:match( 'config' ) and not File:match( 'cfg' ) and not File:match( 'settings' ) then continue end
+
+        load_cfg( loc, File, mod )
+    end
+
+    for k, v in ipairs( _ ) do
+        if v ~= 'cfg' and v ~= 'config' then continue end
+        local path      = loc .. '/' .. v
+        local sub, _    = file.Find( path .. '/' .. '*', 'LUA' )
+        for _, File in ipairs( sub ) do
+            if not ( File:match( '.lua' ) ) then continue end
+            load_cfg( path, File, mod )
         end
     end
 end
@@ -625,7 +656,7 @@ end
 *   start loading all required modules
 */
 
-local function modules_initialize( )
+function base:modules_initialize( )
 
     rhook.run.rlib( 'modules_load_pre' )
 
@@ -646,8 +677,8 @@ local function modules_initialize( )
     rhook.run.rlib( 'rcore_modules_load_post', base.modules )
 
 end
-rhook.new.rlib( 'rcore_loader_post', 'rcore_modules_initialize', modules_initialize )
-rhook.new.gmod( 'OnReloaded', 'rcore_modules_onreload', modules_initialize )
+rhook.new.rlib( 'rcore_loader_post', 'rcore_modules_initialize', base.modules_initialize )
+rhook.new.gmod( 'OnReloaded', 'rcore_modules_onreload', base.modules_initialize )
 
 /*
 *   modules :: storage

@@ -996,6 +996,47 @@ end
 rcc.register( 'rlib_modules', rcc_modules )
 
 /*
+*   rcc :: modules :: reload
+*
+*   reloads all modules
+*/
+
+local function rcc_modules_reload( pl, cmd, args )
+
+    /*
+    *   define command
+    */
+
+    local ccmd = rlib.calls:get( 'commands', 'rlib_modules_reload' )
+
+    /*
+    *   scope
+    */
+
+    if ( ccmd.scope == 1 and not rlib.con:Is( pl ) ) then
+        access:deny_consoleonly( pl, base.manifest.name, ccmd.id )
+        return
+    end
+
+    /*
+    *   perms
+    */
+
+    if not access:bIsRoot( pl ) then
+        access:deny_permission( pl, base.manifest.name, ccmd.id )
+        return
+    end
+
+    /*
+    *   functionality
+    */
+
+    rcore:modules_initialize( )
+
+end
+rcc.register( 'rlib_modules_reload', rcc_modules_reload )
+
+/*
 *   rcc :: tools :: asay
 *
 *   sends a message to all players in chat who have the permission 'rlib_asay'
