@@ -1,6 +1,10 @@
 {
     "unreleased": [],
     "releases": {
+      "3.1.1": [
+            "[ + ] concommand rlib.modules.reload",
+            "[ ^ ] now supports /cfg/ folder - recursive loading"
+      ],
       "3.1.0": [
             "[ + ] new debug system to assist developer with issues",
             "[ + ] rlib.v ( convar structure and data )",
@@ -14,11 +18,9 @@
             "[ + ] rcc.get( )",
             "[ + ] checksum:valid( )",
             "[ + ] concommand rlib.rcc.rehash",
-            "[ + ] concommand rlib.modules.reload",
             "[ + ] includes/modules/promise.lua",
             "[ + ] autoloader uses sv_hibernate_think 1",
             "[ + ] rcfg feature released",
-            "[ ^ ] now supports /cfg/ folder - recursive loading",
             "[ ^ ] cleaned console output code with new helper functions",
             "[ ^ ] updated rlib.get:gm() to accept additional parameter (bClean)",
             "[ ^ ] base rlib concommand revised for better command searching",
