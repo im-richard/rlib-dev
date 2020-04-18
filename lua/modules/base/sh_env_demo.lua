@@ -36,7 +36,7 @@
     MODULE.owner		    = '{{ user_id }}'
     MODULE.version          = { 1, 0, 0 }
     MODULE.libreq           = { 3, 0, 0 }
-    MODULE.released		    = 1582778880
+    MODULE.released		    = 1585389626
 
 /*
 *   content distribution
@@ -134,8 +134,8 @@
             id          = 'module.cmd',
             desc        = 'demo command example',
             scope       = 1,
-            assoc = function( ply, cmd, args, str )
-                module.cc_demo( ply, cmd, args, str )
+            assoc = function( ... )
+                module.cc_demo( ... )
             end,
         },
     }

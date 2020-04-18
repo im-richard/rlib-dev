@@ -1,7 +1,7 @@
 /*
 *   @package        : rlib
 *   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      : (c) 2018 - 2020
+*   @copyright      : (C) 2018 - 2020
 *   @since          : 1.0.0
 *   @website        : https://rlib.io
 *   @docs           : https://docs.rlib.io
@@ -49,8 +49,8 @@ end
 */
 
 local function netlib_udm_check( )
-    mf.astra.oort_status = net.ReadBool( )
-    mf.astra.is_latest = net.ReadBool( )
+    mf.astra.oort.validated     = net.ReadBool( )
+    mf.astra.oort.has_latest    = net.ReadBool( )
 end
 net.Receive( 'rlib.udm.check', netlib_udm_check )
 
@@ -108,15 +108,10 @@ function PANEL:Init( )
     self.svg_w                  = 100
 
     /*
-    *   display parent :: static || animated
+    *   animation
     */
 
-    if helper:cvar_bool( 'rlib_animations_enabled' ) then
-        self:SetPos( ( ScrW( ) / 2 ) - ( ui_w / 2 ), ScrH( ) + ui_h )
-        self:MoveTo( ( ScrW( ) / 2 ) - ( ui_w / 2 ), ( ScrH( ) / 2 ) - (  ui_h / 2 ), 0.4, 0, -1 )
-    else
-        self:SetPos( ( ScrW( ) / 2 ) - ( ui_w / 2 ), ( ScrH( ) / 2 ) - (  ui_h / 2 ) )
-    end
+    ui:pos_center( self )
 
     /*
     *   titlebar
@@ -124,13 +119,13 @@ function PANEL:Init( )
 
     self.lblTitle               = ui.new( 'lbl', self               )
     :notext                     (                                   )
-    :font                       ( pref( 'about.title' )             )
+    :font                       ( pref( 'about_title' )             )
     :clr                        ( Color( 255, 255, 255, 255 )       )
 
                                 :draw( function( s, w, h )
                                     if not self.title or self.title == '' then return end
-                                    draw.SimpleText( utf8.char( 9930 ), pref( 'about.icon' ), 0, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( self.title, pref( 'about.title' ), 25, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( utf8.char( 9930 ), pref( 'about_icon' ), 0, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( self.title, pref( 'about_title' ), 25, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -149,7 +144,7 @@ function PANEL:Init( )
 
                                 :draw( function( s, w, h )
                                     local clr_txt = s.hover and Color( 200, 55, 55, 255 ) or Color( 237, 237, 237, 255 )
-                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'about.exit' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'about_exit' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -187,7 +182,7 @@ function PANEL:Init( )
 
                                     local clr_rgb = Color( r, g, b )
 
-                                    draw.SimpleText( self.hdr_title, pref( 'about.name' ), w / 2, h / 2, clr_rgb, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( self.hdr_title, pref( 'about_name' ), w / 2, h / 2, clr_rgb, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -219,26 +214,13 @@ function PANEL:Init( )
     *   svg :: objects
     */
 
+    local margin                = self:GetWide( ) / 2 - 70
+
     self.svg_updated            = ui.new( 'rlib.lo.svg.c', self.p_tags )
-    :static                     ( LEFT                              )
-    :margin                     ( 0                                 )
+    :static                     ( FILL                              )
+    :margin                     ( margin, 0, margin, 0              )
     :tall                       ( 20                                )
-    :wide                       ( self.svg_w + 21                   )
     :param                      ( 'SetImg', mf.astra.svg.updated    )
-
-    self.svg_size               = ui.new( 'rlib.lo.svg.c', self.p_tags )
-    :static                     ( LEFT                              )
-    :margin                     ( 0                                 )
-    :tall                       ( 20                                )
-    :wide                       ( self.svg_w                        )
-    :param                      ( 'SetImg', mf.astra.svg.size       )
-
-    self.svg_stats              = ui.new( 'rlib.lo.svg.c', self.p_tags )
-    :static                     ( LEFT                              )
-    :margin                     ( 0, 0, 0, 1                        )
-    :tall                       ( 20                                )
-    :wide                       ( self.svg_w                        )
-    :param                      ( 'SetImg', mf.astra.svg.stats      )
 
     /*
     *   status :: label
@@ -247,7 +229,7 @@ function PANEL:Init( )
     self.l_status               = ui.new( 'lbl', self.p_status      )
     :static                     ( FILL                              )
     :margin                     ( 3, 5, 3, 1                        )
-    :font                       ( pref( 'about.status' )            )
+    :font                       ( pref( 'about_status' )            )
     :text                       ( lang( 'lib_udm_checking' )        )
     :clr                        ( Color( 255, 255, 255, 255 )       )
     :align                      ( 5                                 )
@@ -275,8 +257,8 @@ function PANEL:Init( )
     :tall                       ( 55                                )
 
                                 :draw( function( s, w, h )
-                                    draw.SimpleText( lang( 'label_version' ), pref( 'about.entry.label' ), w / 2, h / 2 - 10, Color( 200, 100, 100, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( base.get:versionstr( ), pref( 'about.entry.value' ), w / 2, h / 2 + 10, Color( 237, 237, 237, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( lang( 'label_version' ), pref( 'about_entry_label' ), w / 2, h / 2 - 10, Color( 200, 100, 100, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( base.get:ver2str_mf( ), pref( 'about_entry_value' ), w / 2, h / 2 + 10, Color( 237, 237, 237, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -289,8 +271,8 @@ function PANEL:Init( )
     :tall                       ( 55                                )
 
                                 :draw( function( s, w, h )
-                                    draw.SimpleText( lang( 'label_released' ), pref( 'about.entry.label' ), w / 2, h / 2 - 10, Color( 200, 100, 100, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( os.date( '%m.%d.%Y', mf.released ), pref( 'about.entry.value' ), w / 2, h / 2 + 10, Color( 237, 237, 237, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( lang( 'label_released' ), pref( 'about_entry_label' ), w / 2, h / 2 - 10, Color( 200, 100, 100, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( os.date( '%m.%d.%Y', mf.released ), pref( 'about_entry_value' ), w / 2, h / 2 + 10, Color( 237, 237, 237, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -303,8 +285,8 @@ function PANEL:Init( )
     :tall                       ( 55                                )
 
                                 :draw( function( s, w, h )
-                                    draw.SimpleText( lang( 'label_author' ), pref( 'about.entry.label' ), w / 2, h / 2 - 10, Color( 200, 100, 100, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( mf.author, pref( 'about.entry.value' ), w / 2, h / 2 + 10, Color( 237, 237, 237, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( lang( 'label_author' ), pref( 'about_entry_label' ), w / 2, h / 2 - 10, Color( 200, 100, 100, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( mf.author, pref( 'about_entry_value' ), w / 2, h / 2 + 10, Color( 237, 237, 237, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -332,7 +314,7 @@ function PANEL:Init( )
     :canedit                    ( true                              )
     :autoupdate	                ( true 					            )
     :scur	                    ( Color( 255, 255, 255, 255 ), 'beam' )
-    :txt	                    ( mf.about, Color( 255, 255, 255, 255 ), pref( 'about.entry' ) )
+    :txt	                    ( mf.about, Color( 255, 255, 255, 255 ), pref( 'about_entry' ) )
     :drawentry                  ( clr_text, clr_cur, clr_hl         )
 
                                 :ontxtchg( function( s )
@@ -357,29 +339,29 @@ function PANEL:Init( )
                                     design.box( 6, ( h / 2 ) - ( 10 / 2 ), 10, 10, clr_box )
                                     design.box( 6 + 10 + 3, ( h / 2 ) - ( 10 / 2 ), 10, 10, clr_box2 )
 
-                                    draw.SimpleText( self.conn_status, pref( 'about.status.conn' ), w - 6, h / 2 + 1, self.conn_clr, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( self.conn_status, pref( 'about_status_conn' ), w - 6, h / 2 + 1, self.conn_clr, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
                                 end )
 
                                 :logic( function( s )
                                     if not ui:valid( s ) then return end
-                                    if not mf.astra.oort_status then return end
-                                    if not timex.exists( pref( 'about.indicator.l1.r1' ) ) then
-                                        timex.create( pref( 'about.indicator.l1.r1' ), math.random( 0.5, 1 ), 1, function( )
+                                    if not mf.astra.oort.validated then return end
+                                    if not timex.exists( 'rlib_about_indic_l1_r1' ) then
+                                        timex.create( 'rlib_about_indic_l1_r1', math.random( 0.5, 1 ), 1, function( )
                                             clr_box = Color( 46, 46, 50, 255 )
                                         end )
-                                        if not timex.exists( pref( 'about.indicator.l1.r2' ) ) then
-                                            timex.create( pref( 'about.indicator.l1.r2' ), math.random( 0.5, 1 ), 1, function( )
+                                        if not timex.exists( 'rlib_about_indic_l1_r2' ) then
+                                            timex.create( 'rlib_about_indic_l1_r2', math.random( 0.5, 1 ), 1, function( )
                                                 clr_box2 = Color( 46, 46, 50, 255 )
                                             end )
                                         end
                                     end
 
-                                    if not timex.exists( pref( 'about.indicator.l2.r1' ) ) then
-                                        timex.create( pref( 'about.indicator.l2.r1' ), math.random( 0.5, 3 ), 1, function( )
+                                    if not timex.exists( 'rlib_about_indic_l2_r1' ) then
+                                        timex.create( 'rlib_about_indic_l2_r1', math.random( 0.5, 3 ), 1, function( )
                                             clr_box = Color( 255, 50, 50, 255 )
                                         end )
-                                        if not timex.exists( pref( 'about.indicator.l2.r2' ) ) then
-                                            timex.create( pref( 'about.indicator.l2.r2' ), math.random( 0.5, 3 ), 1, function( )
+                                        if not timex.exists( 'rlib_about_indic_l2_r2' ) then
+                                            timex.create( 'rlib_about_indic_l2_r2', math.random( 0.5, 3 ), 1, function( )
                                                 clr_box2 = Color( 255, 50, 50, 255 )
                                             end )
                                         end
@@ -393,7 +375,7 @@ function PANEL:Init( )
     *   if updates are needed
     */
 
-    timex.create( pref( 'timer.update.check' ), 30, 0, function( )
+    timex.create( 'rlib_udm_check', 30, 1, function( )
 
         /*
         *   network update check
@@ -410,9 +392,9 @@ function PANEL:Init( )
     *   initialize timer
     */
 
-    timex.simple( pref( 'about.initialize' ), 3, function( )
+    timex.simple( 'rlib_about_run', 3, function( )
         if not ui:valid( self ) then return end
-        if not mf.astra.is_latest then
+        if not mf.astra.oort.has_latest then
             ui:show( self.p_status )
             self.l_status:SetText   ( lang( 'lib_udm_outdated' ) )
         else
@@ -420,7 +402,7 @@ function PANEL:Init( )
             clr_box_status          = Color( 50, 80, 50, 255 )
         end
 
-        if mf.astra.oort_status then
+        if mf.astra.oort.validated then
             self.conn_status        = lang( 'lib_oort_abt_status_ok' )
             self.conn_clr           = Color( 0, 134, 51, 255 )
             return
@@ -542,7 +524,7 @@ function PANEL:Paint( w, h )
     design.rbox_adv( 0, 5, 0, w - 10, 34, Color( 30, 30, 30, 255 ), true, true, false, false )
 
     -- resizing arrow
-    draw.SimpleText( utf8.char( 9698 ), pref( 'about.resizer' ), w - 3, h - 10, Color( 240, 72, 133, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+    draw.SimpleText( utf8.char( 9698 ), pref( 'about_resizer' ), w - 3, h - 10, Color( 240, 72, 133, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
 end
 
 /*
@@ -589,7 +571,7 @@ end
 */
 
 function PANEL:Destroy( )
-    timex.expire( pref( 'timer.update.check' ) )
+    timex.expire( 'rlib_udm_check' )
     ui:destroy( self, true, true )
 end
 

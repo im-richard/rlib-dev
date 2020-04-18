@@ -32,7 +32,7 @@
     MODULE.icon             = ''
     MODULE.version          = { 2, 0, 0 }
     MODULE.libreq           = { 3, 0, 0 }
-    MODULE.released		    = 1582778880
+    MODULE.released		    = 1585389626
 
 /*
 *   content distribution
@@ -68,48 +68,7 @@
 *   calls :: commands
 */
 
-    MODULE.calls.commands =
-    {
-        [ 'rcore_modules' ] =
-        {
-            enabled     = true,
-            id          = 'rcore.modules',
-            desc        = 'returns a list of installed and running modules',
-            scope       = 1,
-            ex =
-            {
-                'rcore.modules',
-                'rcore.modules -p',
-            },
-            flags =
-            {
-                [ 'paths' ]     = { flag = '-p', desc = 'display module install paths' },
-            },
-            assoc = function( ply, cmd, args, str )
-                rcore.cc_modules( ply, cmd, args, str )
-            end,
-        },
-        [ 'rcore_reload' ] =
-        {
-            enabled     = true,
-            id          = 'rcore.reload',
-            desc        = 'reloads the core module completely',
-            scope       = 1,
-            assoc = function( ply, cmd, args, str )
-                rcore.cc_reload( ply, cmd, args, str )
-            end,
-        },
-        [ 'rcore_errlog' ] =
-        {
-            enabled     = true,
-            id          = 'rcore.errlog',
-            desc        = 'displays any registered errors with the specified module',
-            scope       = 1,
-            assoc = function( ply, cmd, args, str )
-                rcore.cc_errlog( ply, cmd, args, str )
-            end,
-        },
-    }
+    MODULE.calls.commands = { }
 
 /*
 *   calls :: hooks

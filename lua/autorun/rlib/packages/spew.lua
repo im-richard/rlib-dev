@@ -1,10 +1,11 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
+*   @package        : rlib
+*   @module         : spew
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -31,16 +32,20 @@ rlib                    = rlib or { }
 local base              = rlib
 local env               = _G
 local mf                = base.manifest
-local prefix            = mf.prefix
-local cfg               = base.settings
+local pf                = mf.prefix
 
 /*
 *   lib includes
 */
 
 local access            = base.a
-local utils             = base.u
 local helper            = base.h
+
+/*
+*   localize
+*/
+
+local sf 	            = string.format
 
 /*
 *   tables
@@ -52,6 +57,36 @@ local pkg               = spew
 local pkg_name          = 'spew'
 
 /*
+*   simplifiy funcs
+*/
+
+local function con( ... ) base:console( ... ) end
+local function log( ... ) base:log( ... ) end
+
+/*
+*	prefix :: create id
+*/
+
+local function pref( id, suffix )
+    local affix     = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or pf
+    affix           = affix:sub( -1 ) ~= '.' and sf( '%s.', affix ) or affix
+
+    id              = isstring( id ) and id or 'noname'
+    id              = id:gsub( '[%c%s]', '.' )
+
+    return sf( '%s%s', affix, id )
+end
+
+/*
+*	prefix :: handle
+*/
+
+local function pid( str, suffix )
+    local state = ( isstring( suffix ) and suffix ) or ( base and mf.prefix ) or false
+    return pref( str, state )
+end
+
+/*
 *   pkg declarations
 */
 
@@ -59,8 +94,8 @@ local manifest =
 {
     author      = 'richard',
     desc        = 'console spew',
-    build       = 030619.2,
-    version     = '1.1.0',
+    build       = 040420,
+    version     = { 2, 1, 0 },
 }
 
 /*
@@ -100,14 +135,6 @@ spew.destroyinit = true
 spew.loaded = false
 
 /*
-*   module info :: manifest
-*/
-
-function pkg:manifest( )
-    return self.__manifest
-end
-
-/*
 *   spew :: initialized :: destroy hook
 *
 *   destroys the spew hook after its not need anymore.
@@ -115,15 +142,15 @@ end
 */
 
 function spew.initialize( )
-    timex.simple( prefix .. 'spew.initialize', 3, function( )
+    timex.simple( 'rlib_spew_run', 3, function( )
         if not spew.destroyinit then return end
-        hook.Remove( 'ShouldSpew', prefix .. 'spew.enabled' )
+        hook.Remove( 'ShouldSpew', pid( 'spew.enabled' ) )
         if spew.enabled then
-            base:log( 6, 'Spew hook destroyed' )
+            log( 6, 'Spew hook destroyed' )
         end
     end )
 end
-hook.Add( 'Initialize', prefix .. 'spew.initialize', function( ) spew.initialize( ) end )
+hook.Add( 'Initialize', pid( '__spew.initialize' ), function( ) spew.initialize( ) end )
 
 /*
 *   spew :: enable
@@ -138,7 +165,7 @@ function spew.enable( )
     local is_loaded = false
 
     if not spew.enabled then
-        base:log( 6, 'Spew module disabled via config setting' )
+        log( 6, 'Spew module disabled via config setting' )
         return
     end
 
@@ -156,7 +183,7 @@ function spew.enable( )
             [ 'unknown' ]           = true,
             [ 'invalid command' ]   = true,
         }
-        hook.Add( 'ShouldSpew', prefix .. 'spew.enabled', function( msg, mtype, clr, lvl, grp )
+        hook.Add( 'ShouldSpew', pid( 'spew.enabled' ), function( msg, mtype, clr, lvl, grp )
             local is_found = false
             for k, v in pairs( filter_text ) do
                 if not string.match( string.lower( msg ), k ) then continue end
@@ -166,11 +193,11 @@ function spew.enable( )
             return false
         end )
     else
-        base:log( 2, 'Module spew not loaded -- possibly missing library dll' )
+        log( 2, 'Module spew not loaded -- possibly missing library dll' )
         return
     end
 
-    base:log( 4, 'Spew module enabled' )
+    log( 4, 'Spew module enabled' )
 end
 
 /*
@@ -179,7 +206,7 @@ end
 *   base package command
 */
 
-function utils.cc_spew( ply, cmd, args )
+function rcc.call:Spew( ply, cmd, args )
 
     /*
     *   permissions
@@ -187,7 +214,7 @@ function utils.cc_spew( ply, cmd, args )
 
     local ccmd = base.calls:get( 'commands', 'spew' )
 
-    if ( ccmd.scope == 1 and not base:isconsole( ply ) ) then
+    if ( ccmd.scope == 1 and not base.con:Is( ply ) ) then
         access:deny_consoleonly( ply, script, ccmd.id )
         return
     end
@@ -198,13 +225,29 @@ function utils.cc_spew( ply, cmd, args )
     end
 
     /*
-    *   functionality
+    *   output
     */
 
-    base.msg:route( ply, false, pkg_name, mf.name .. ' package' )
-    base.msg:route( ply, false, pkg_name, 'v' .. manifest.version .. ' build-' .. manifest.build )
-    base.msg:route( ply, false, pkg_name, 'developed by ' .. manifest.author )
-    base.msg:route( ply, false, pkg_name, manifest.desc .. '\n' )
+    con( pl, 1 )
+    con( pl, 0 )
+    con( pl, Color( 255, 255, 0 ), sf( 'Manifest » %s', pkg_name ) )
+    con( pl, 0 )
+    con( pl, manifest.desc )
+    con( pl, 1 )
+
+    local a1_l              = sf( '%-20s',  'Version'   )
+    local a2_l              = sf( '%-5s',  '»'   )
+    local a3_l              = sf( '%-35s',  sf( 'v%s build-%s', rlib.get:ver2str( manifest.version ), manifest.build )   )
+
+    con( pl, Color( 255, 255, 0 ), a1_l, Color( 255, 255, 255 ), a2_l, a3_l )
+
+    local b1_l              = sf( '%-20s',  'Author'    )
+    local b2_l              = sf( '%-5s',  '»'          )
+    local b3_l              = sf( '%-35s',  sf( '%s', manifest.author ) )
+
+    con( pl, Color( 255, 255, 0 ), b1_l, Color( 255, 255, 255 ), b2_l, b3_l )
+
+    con( pl, 2 )
 
 end
 
@@ -212,7 +255,7 @@ end
 *   concommand :: toggle package on/off
 */
 
-function utils.cc_spew_enabled( ply, cmd, args )
+function rcc.call:Spew_Enabled( ply, cmd, args )
 
     /*
     *   permissions
@@ -220,7 +263,7 @@ function utils.cc_spew_enabled( ply, cmd, args )
 
     local ccmd = base.calls:get( 'commands', 'spew_enabled' )
 
-    if ( ccmd.scope == 1 and not base:isconsole( ply ) ) then
+    if ( ccmd.scope == 1 and not base.con:Is( ply ) ) then
         access:deny_consoleonly( ply, script, ccmd.id )
         return
     end
@@ -235,7 +278,7 @@ function utils.cc_spew_enabled( ply, cmd, args )
     if status then
 
         if CLIENT then
-            base:log( 2, 'Spew module cannot be toggled client-side' )
+            log( 2, 'Spew module cannot be toggled client-side' )
             return
         end
 
@@ -264,7 +307,7 @@ function utils.cc_spew_enabled( ply, cmd, args )
                     [ 'unknown' ]           = true,
                     [ 'invalid command' ]   = true,
                 }
-                hook.Add( 'ShouldSpew', prefix .. 'spew.enabled', function( msg, mtype, clr, lvl, grp )
+                hook.Add( 'ShouldSpew', pid( 'spew.enabled' ), function( msg, mtype, clr, lvl, grp )
                     local is_found = false
                     for k, v in pairs( filter_text ) do
                         if not string.match( string.lower( msg ), k ) then continue end
@@ -274,11 +317,11 @@ function utils.cc_spew_enabled( ply, cmd, args )
                     return false
                 end )
             else
-                base:log( 2, 'Module spew not loaded -- possibly missing library dll' )
+                log( 2, 'Module spew not loaded -- possibly missing library dll' )
                 return
             end
 
-            base:log( 4, 'Spew module enabled' )
+            log( 4, 'Spew module enabled' )
 
         else
 
@@ -287,15 +330,15 @@ function utils.cc_spew_enabled( ply, cmd, args )
             */
 
             spew.enabled = false
-            hook.Remove( 'ShouldSpew', prefix .. 'spew.enabled' )
+            hook.Remove( 'ShouldSpew', pid( 'spew.enabled' ) )
 
-            base:log( 4, '[%s] :: is now disabled', pkg_name )
+            log( 4, '[%s] :: is now disabled', pkg_name )
 
         end
 
     else
-        base:log( 1, '[%s] :: arg:[ on, off ]', pkg_name )
-        base:log( 1, '[%s] :: syntax: [ %s ]', pkg_name, 'spew.enabled on' )
+        log( 1, '[%s] :: arg:[ on, off ]', pkg_name )
+        log( 1, '[%s] :: syntax: [ %s ]', pkg_name, 'spew.enabled on' )
     end
 
 end
@@ -316,8 +359,8 @@ local function register_commands( )
             desc        = 'returns package information',
             scope       = 2,
             clr         = Color( 255, 255, 0 ),
-            assoc = function( ply, cmd, args, str )
-                rlib.u.cc_spew( ply, cmd, args, str )
+            assoc = function( ... )
+                rcc.call:Spew( ... )
             end,
         },
         [ pkg_name .. '_enabled' ] =
@@ -329,15 +372,33 @@ local function register_commands( )
             desc        = 'toggles spew on/off',
             scope       = 1,
             clr         = Color( 255, 255, 0 ),
-            assoc = function( ply, cmd, args, str )
-                rlib.u.cc_spew_enabled( ply, cmd, args, str )
+            assoc = function( ... )
+                rcc.call:Spew_Enabled( ... )
             end,
         },
     }
 
-    base.calls:register_cmds( pkg_commands )
+    base.calls.commands:Register( pkg_commands )
 end
-hook.Add( prefix .. 'cmd.register', prefix .. '__spew.cmd.register', register_commands )
+hook.Add( pid( 'cmd.register' ), pid( '__spew.cmd.register' ), register_commands )
+
+/*
+*   register package
+*/
+
+local function register_pkg( )
+    if not istable( _M ) then return end
+    base.package:Register( _M )
+end
+hook.Add( pid( 'pkg.register' ), pid( '__spew.pkg.register' ), register_pkg )
+
+/*
+*   module info :: manifest
+*/
+
+function pkg:manifest( )
+    return self.__manifest
+end
 
 /*
 *   __index / manifest declarations

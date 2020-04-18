@@ -1,10 +1,11 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.1.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
+*   @package        : rlib
+*   @module         : timex
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.1.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -22,29 +23,15 @@
 rlib                    = rlib or { }
 local base              = rlib
 local mf                = base.manifest
-local prefix            = mf.prefix
+local pf                = mf.prefix
 local script            = mf.name
-local settings          = base.settings
 
 /*
 *   lib includes
 */
 
 local access            = base.a
-local utils             = base.u
 local helper            = base.h
-
-/*
-*   pkg declarations
-*/
-
-local manifest =
-{
-    author      = 'richard',
-    desc        = 'timer management and functionality',
-    build       = 122319.1,
-    version     = '2.0.0',
-}
 
 /*
 *   module declarations
@@ -64,6 +51,13 @@ local sf                = string.format
 local floor             = math.floor
 
 /*
+*   simplifiy funcs
+*/
+
+local function con( ... ) base:console( ... ) end
+local function log( ... ) base:log( ... ) end
+
+/*
 *   call id
 *
 *   @source : lua\autorun\libs\_calls
@@ -75,17 +69,17 @@ local function call_id( id )
 end
 
 /*
-*	prefix :: create id
+*	pf :: create id
 */
 
 local function pref( id, suffix )
-    local affix = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or prefix
-    affix = affix:sub( -1 ) ~= '.' and string.format( '%s.', affix ) or affix
+    local affix     = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or pf
+    affix           = affix:sub( -1 ) ~= '.' and sf( '%s.', affix ) or affix
 
-    id = isstring( id ) and id or 'noname'
-    id = id:gsub( '[%c%s]', '.' )
+    id              = isstring( id ) and id or 'noname'
+    id              = id:gsub( '[%c%s]', '.' )
 
-    return string.format( '%s%s', affix, id )
+    return sf( '%s%s', affix, id )
 end
 
 /*
@@ -111,36 +105,40 @@ local pkg           = timex
 local pkg_name      = _NAME or 'timex'
 
 /*
+*   pkg declarations
+*/
+
+local manifest =
+{
+    author          = 'richard',
+    desc            = 'timer registration and management tool',
+    build           = 040120,
+    version         = { 2, 2, 0 },
+}
+
+/*
 *   required tables
 */
 
-settings            = settings or { }
-sys                 = sys or { }
-secs                = secs or { }
+settings            = settings  or { }
+sys                 = sys       or { }
+secs                = secs      or { }
 
 /*
-*	prefix :: getid
+*	pf :: getid
 */
 
 local function gid( id )
     id = isstring( id ) and id or tostring( id )
     if not isstring( id ) then
         local trcback = debug.traceback( )
-        base:log( dcat, '[ %s ] :: invalid id\n%s', pkg_name, tostring( trcback ) )
+        log( dcat, '[ %s ] :: invalid id\n%s', pkg_name, tostring( trcback ) )
         return
     end
 
     id = call_id( id )
 
     return id
-end
-
-/*
-*   module info :: manifest
-*/
-
-function pkg:manifest( )
-    return self.__manifest
 end
 
 /*
@@ -273,7 +271,7 @@ function create( id, delay, repscnt, fn )
     repscnt     = repscnt or 1
 
     if not fn or not base:isfunc( fn ) then
-        base:log( 1, '[ %s ] :: timer created with no func', pkg_name )
+        log( 1, '[ %s ] :: timer created with no func', pkg_name )
         fn = function( ) end
     end
 
@@ -287,7 +285,7 @@ new = create
 *   create a simple timer.
 *   args a, b can be mixed to include or exclude a string id ( used for the lib calls function )
 *
-*   @usage  : timex.simple( prefix .. 'action_name', 5, function( ) end )
+*   @usage  : timex.simple( pf .. 'action_name', 5, function( ) end )
 *   @usage  : timex.simple( 5, function( ) end )
 *   
 *   @todo   : add timer logging for c_id
@@ -302,7 +300,7 @@ function simple( a, b, fn )
     local c_func    = base:isfunc( fn ) and fn or base:isfunc( b ) and b or nil
 
     if not c_func or not base:isfunc( c_func ) then
-        base:log( 6, '[%s] :: simple timer created with no func', pkg_name )
+        log( 6, '[%s] :: simple timer created with no func', pkg_name )
         c_func = function( ) end
     end
 
@@ -705,12 +703,12 @@ function secs.benchmark( i, offset )
 end
 
 /*
-*   concommand :: base command
+*   rcc :: base command
 *
 *   base package command
 */
 
-function utils.cc_timex( ply, cmd, args )
+function rcc.call:Timex( ply, cmd, args )
 
     /*
     *   permissions
@@ -718,7 +716,7 @@ function utils.cc_timex( ply, cmd, args )
 
     local ccmd = base.calls:get( 'commands', 'timex' )
 
-    if ( ccmd.scope == 1 and not base:isconsole( ply ) ) then
+    if ( ccmd.scope == 1 and not base.con:Is( ply ) ) then
         access:deny_consoleonly( ply, script, ccmd.id )
         return
     end
@@ -729,23 +727,38 @@ function utils.cc_timex( ply, cmd, args )
     end
 
     /*
-    *   functionality
+    *   output
     */
 
-    base.msg:route( ply, false, pkg_name, script .. ' package' )
-    base.msg:route( ply, false, pkg_name, 'v' .. manifest.version .. ' build-' .. manifest.build )
-    base.msg:route( ply, false, pkg_name, 'developed by ' .. manifest.author )
-    base.msg:route( ply, false, pkg_name, manifest.desc .. '\n' )
+    con( pl, 1 )
+    con( pl, 0 )
+    con( pl, Color( 255, 255, 0 ), sf( 'Manifest » %s', pkg_name ) )
+    con( pl, 0 )
+    con( pl, manifest.desc )
+    con( pl, 1 )
 
+    local a1_l              = sf( '%-20s',  'Version'   )
+    local a2_l              = sf( '%-5s',  '»'   )
+    local a3_l              = sf( '%-35s',  sf( 'v%s build-%s', rlib.get:ver2str( manifest.version ), manifest.build )   )
+
+    con( pl, Color( 255, 255, 0 ), a1_l, Color( 255, 255, 255 ), a2_l, a3_l )
+
+    local b1_l              = sf( '%-20s',  'Author'    )
+    local b2_l              = sf( '%-5s',  '»'          )
+    local b3_l              = sf( '%-35s',  sf( '%s', manifest.author ) )
+
+    con( pl, Color( 255, 255, 0 ), b1_l, Color( 255, 255, 255 ), b2_l, b3_l )
+
+    con( pl, 2 )
 end
 
 /*
-*   concommand :: list registered timers
+*   rcc :: list registered timers
 *
 *   returns a list of registered timers within package
 */
 
-function utils.cc_timex_list( ply, cmd, args )
+function rcc.call:Timex_List( ply, cmd, args )
 
     /*
     *   permissions
@@ -753,7 +766,7 @@ function utils.cc_timex_list( ply, cmd, args )
 
     local ccmd = base.calls:get( 'commands', 'timex_list' )
 
-    if ( ccmd.scope == 1 and not base:isconsole( ply ) ) then
+    if ( ccmd.scope == 1 and not base.con:Is( ply ) ) then
         access:deny_consoleonly( ply, script, ccmd.id )
         return
     end
@@ -819,8 +832,8 @@ local function register_commands( )
             desc        = 'returns package information',
             scope       = 2,
             clr         = Color( 255, 255, 0 ),
-            assoc = function( ply, cmd, args, str )
-                rlib.u.cc_timex( ply, cmd, args, str )
+            assoc = function( ... )
+                rcc.call:Timex( ... )
             end,
         },
         [ pkg_name .. '_list' ] =
@@ -836,15 +849,15 @@ local function register_commands( )
             {
                 [ 'active' ]    = { flag = '-a', desc = 'returns active only' },
             },
-            assoc = function( ply, cmd, args, str )
-                rlib.u.cc_timex_list( ply, cmd, args, str )
+            assoc = function( ... )
+                rcc.call:Timex_List( ... )
             end,
         },
     }
 
-    base.calls:register_cmds( pkg_commands )
+    base.calls.commands:Register( pkg_commands )
 end
-hook.Add( prefix .. 'cmd.register', prefix .. '__timex.cmd.register', register_commands )
+hook.Add( pid( 'cmd.register' ), pid( '__timex.cmd.register' ), register_commands )
 
 /*
 *   register package
@@ -852,9 +865,17 @@ hook.Add( prefix .. 'cmd.register', prefix .. '__timex.cmd.register', register_c
 
 local function register_pkg( )
     if not istable( _M ) then return end
-    base.pkgs:register( _M )
+    base.package:Register( _M )
 end
-hook.Add( prefix .. 'pkg.register', prefix .. '__timex.pkg.register', register_pkg )
+hook.Add( pid( 'pkg.register' ), pid( '__timex.pkg.register' ), register_pkg )
+
+/*
+*   module info :: manifest
+*/
+
+function pkg:manifest( )
+    return self.__manifest
+end
 
 /*
 *   __tostring

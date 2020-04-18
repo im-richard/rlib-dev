@@ -1,11 +1,10 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
-*   @file           calls.lua
+*   @package        : rlib
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -31,13 +30,7 @@ local cfg               = base.settings
 */
 
 local helper            = base.h
-local storage           = base.s
-local utils             = base.u
-local access            = base.a
-local tools             = base.t
-local konsole           = base.k
 local sys               = base.sys
-local resources         = base.resources
 
 /*
 *   Localized lua funcs
@@ -56,18 +49,6 @@ local string            = string
 local sf                = string.format
 
 /*
-*   Localized cmd func
-*
-*   @source : lua\autorun\libs\calls
-*   @param  : str t
-*   @param  : varg { ... }
-*/
-
-local function call( t, ... )
-    return rlib:call( t, ... )
-end
-
-/*
 *   Localized translation func
 */
 
@@ -76,17 +57,23 @@ local function lang( ... )
 end
 
 /*
+*   simplifiy funcs
+*/
+
+local function log( ... ) base:log( ... ) end
+
+/*
 *	prefix :: create id
 */
 
 local function cid( id, suffix )
     local affix     = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or prefix
-    affix           = affix:sub( -1 ) ~= '.' and string.format( '%s.', affix ) or affix
+    affix           = affix:sub( -1 ) ~= '.' and sf( '%s.', affix ) or affix
 
     id              = isstring( id ) and id or 'noname'
     id              = id:gsub( '[%c%s]', '.' )
 
-    return string.format( '%s%s', affix, id )
+    return sf( '%s%s', affix, id )
 end
 
 /*
@@ -117,12 +104,12 @@ end
 
 function base.calls:register( parent, src )
     if not parent.manifest.calls or not istable( parent.manifest.calls ) then
-        base:log( 2, 'missing definition table -- aborting' )
+        log( 2, lang( 'calls_tbl_missing_def' ) )
         return
     end
 
     if not src or not istable( src ) then
-        base:log( 2, 'cannot run calls without valid table' )
+        log( 2, lang( 'calls_tbl_invalid' ) )
         return
     end
 
@@ -184,28 +171,30 @@ end
 */
 
 function base.calls:load( bPrefix, affix )
-    base:log( 6, 'registering netlibs' )
+    log( 6, lang( 'calls_register_nlib' ) )
+
+    hook.Run( pid( 'calls_pre' ) )
 
     if not _G.rcalls[ 'net' ] then
         _G.rcalls[ 'net' ] = { }
-        base:log( 6, '+ netlib calls table' )
+        log( 6, lang( 'calls_register_tbl' ) )
     end
 
     for v in helper.get.data( _G.rcalls[ 'net' ] ) do
         if SERVER then
-            local u_affix = isstring( affix ) and affix or prefix
-            local call_id = bPrefix and tostring( u_affix .. v[ 1 ] ) or tostring( v[ 1 ] )
+            local aff   = isstring( affix ) and affix or prefix
+            local id    = bPrefix and tostring( aff .. v[ 1 ] ) or tostring( v[ 1 ] )
 
-            util.AddNetworkString( call_id )
-            base:log( 6, '+ net » [ %s ]', call_id )
+            util.AddNetworkString( id )
+            log( 6, lang( 'rnet_added', id ) )
         end
     end
 
     if rnet then
-        hook.Run( pid( 'rnet.register' ) )
+        rhook.run.gmod( 'rlib_rnet_register' )
     end
 
-    hook.Run( pid( 'calls.post' ) )
+    hook.Run( pid( 'calls_post' ) )
 end
 
 /*
@@ -219,7 +208,7 @@ end
 
 function base.calls:valid( t )
     if not t or not isstring( t ) or t == '' then
-        rlib:log( 2, 'missing specified call type' )
+        log( 2, lang( 'calls_type_missing_spec' ) )
         local response, cnt_calls, i = '', #_G.rcalls, 0
         for k, v in pairs( _G.rcalls ) do
             response = response .. k
@@ -228,13 +217,13 @@ function base.calls:valid( t )
                 response = response .. ', '
             end
         end
-        rlib:log( 2, 'valid types are [ %s ]', response )
+        log( 2, lang( 'calls_type_valid', response ) )
         return
     end
 
     local data = _G.rcalls[ t ]
     if not data then
-        rlib:log( 2, 'missing call type » [ %s ]', t )
+        log( 2, lang( 'calls_type_missing', t ) )
         return
     end
 
@@ -329,12 +318,12 @@ local function calls_load_post( )
     sys.calls_basecmd = has_basecmd and get_basecmd or false
 
     if not has_basecmd then
-        base:log( 2, 'missing base lib cmd »\n%s', debug.getinfo( 1, 'n' ).name )
+        log( 2, lang( 'calls_cmd_lib_missing', debug.getinfo( 1, 'n' ).name ) )
     else
-        base:log( RLIB_LOG_SYSTEM, '+ base lib cmd [ %s ]', get_basecmd )
+        log( RLIB_LOG_SYSTEM, lang( 'calls_cmd_lib_base' , get_basecmd ) )
     end
 end
-hook.Add( pid( 'calls.post' ), pid( 'calls.load.post' ), calls_load_post )
+hook.Add( pid( 'calls_post' ), pid( 'calls_load_post' ), calls_load_post )
 
 /*
 *   calls :: get call
@@ -344,7 +333,7 @@ hook.Add( pid( 'calls.post' ), pid( 'calls.load.post' ), calls_load_post )
 *   call using localized function in file that you require fetching needed calls.
 *
 *   @ex     : rlib.calls:get( 'calltype', 'id' )
-*             rlib.calls:get( 'commands', 'rcore_modules' )
+*             rlib.calls:get( 'commands', 'rlib_modules' )
 *
 *   @param  : str t
 *   @param  : str s
@@ -362,41 +351,6 @@ function base.calls:get( t, s )
     end
 
     return
-end
-
-/*
-*   calls :: register command
-*
-*   inserts a new command into base commands table which allows it to display within the base library
-*   concommand, as well as execution params
-*
-*   this is an alternative method to registering commands that aren't provided through the module
-*   manifest method
-*
-*   @ex     : rlib.calls:register_cmds( local_tbl_varname )
-*
-*   @param  : tbl params
-*/
-
-function base.calls:register_cmds( params )
-    if not istable( params ) then
-        base:log( 2, 'missing table params specified for new command [ %s ]', debug.getinfo( 1, 'n' ).name )
-        return
-    end
-
-    for k, v in pairs( params ) do
-        if not isstring( k ) then
-            base:log( 2, 'invalid command id » canceling command registration [ %s ]', debug.getinfo( 1, 'n' ).name )
-            continue
-        end
-
-        base.c.commands[ k ]           = v
-        _G.rcalls[ 'commands' ][ k ]   = v
-
-        sys.calls = ( sys.calls or 0 ) + 1
-
-        base:log( 6, '+ command [ %s ]', k )
-    end
 end
 
 /*
@@ -423,7 +377,7 @@ function base:call( t, s, ... )
     if not data then return end
 
     if not isstring( s ) then
-        rlib:log( 2, 'id missing » [ %s ]', t )
+        log( 2, lang( 'calls_id_missing' , t ) )
         return false
     end
 
@@ -447,5 +401,40 @@ function base:call( t, s, ... )
             ret = sf( data[ s ][ 1 ], ... )
         end
         return ret
+    end
+end
+
+/*
+*   calls :: commands :: register
+*
+*   inserts a new command into base commands table which allows it to display within the base library
+*   concommand, as well as execution params
+*
+*   this is an alternative method to registering commands that aren't provided through the module
+*   manifest method
+*
+*   @ex     : rlib.calls.commands:Register( local_tbl_varname )
+*
+*   @param  : tbl params
+*/
+
+function base.calls.commands:Register( params )
+    if not istable( params ) then
+        log( 2, lang( 'calls_reg_params_missing', debug.getinfo( 1, 'n' ).name ) )
+        return
+    end
+
+    for k, v in pairs( params ) do
+        if not isstring( k ) then
+            log( 2, lang( 'calls_reg_cmd_id_missing', debug.getinfo( 1, 'n' ).name ) )
+            continue
+        end
+
+        base.c.commands[ k ]           = v
+        _G.rcalls[ 'commands' ][ k ]   = v
+
+        sys.calls = ( sys.calls or 0 ) + 1
+
+        log( 6, lang( 'calls_cmd_added', k ) )
     end
 end

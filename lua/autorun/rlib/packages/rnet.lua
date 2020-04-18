@@ -1,10 +1,11 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.1.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
+*   @package        : rlib
+*   @module         : rnet
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.1.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -29,7 +30,6 @@ local script            = mf.name
 *   lib includes
 */
 
-local utils             = base.u
 local helper            = base.h
 local access            = base.a
 local konsole           = base.k
@@ -38,14 +38,14 @@ local konsole           = base.k
 *   pkg declarations
 */
 
-    local manifest =
-    {
-        author          = 'richard',
-        desc            = 'send / receive data between client & server',
-        build           = 090419.1,
-        version         = '2.1.0',
-        debug_id        = 'rnet.debug.delay',
-    }
+local manifest =
+{
+    author          = 'richard',
+    desc            = 'network library',
+    build           = 032620,
+    version         = { 2, 0, 0 },
+    debug_id        = 'rnet.debug.delay',
+}
 
 /*
 *   module declarations
@@ -306,14 +306,6 @@ send                = { }
 cfg.debug           = cfg.debug or false
 
 /*
-*   module info :: manifest
-*/
-
-function pkg:manifest( )
-    return self.__manifest
-end
-
-/*
 *   returns directory table
 */
 
@@ -457,27 +449,6 @@ local function make_id( src )
 end
 
 /*
-*   has_id
-*
-*   checks if an action has the required string_id in order to proceed or an error will
-*   output to console
-*
-*   @param  : str action
-*   @param  : str id
-*   @return : bool
-*/
-
-local function has_id( action, id )
-    action = action or 'unspecified'
-
-    if not isstring( id ) then
-        base:log( dcat, 'canceling net signal - missing id from action [ %s ]', action )
-        return false
-    end
-    return true
-end
-
-/*
 *   rnet :: create
 *
 *   creates a new netmsg data value
@@ -542,6 +513,7 @@ function write( name, enum, bits )
         bits    = bits
     }
 end
+add = write
 
 /*
 *   rnet :: register
@@ -565,6 +537,7 @@ function register( )
         base:log( dcat, 'registered id [ %s ]', id )
     end
 end
+run = register
 
 /*
 *   rnet :: read
@@ -729,7 +702,11 @@ if SERVER then
             return false
         end
 
-        if not has_id( debug.getinfo( 1, 'n' ).name, id ) then return end
+        if not id then
+            local trcback = debug.traceback( )
+            base:log( dcat, 'bad rnet id specified\n%s', trcback )
+            return
+        end
 
         local bSilenced     = bSilence and true or false
         id                  = call_id( id )
@@ -752,7 +729,11 @@ if SERVER then
     */
 
     function send.all( id, data, bSilence )
-        if not has_id( debug.getinfo( 1, 'n' ).name, id ) then return end
+        if not id then
+            local trcback = debug.traceback( )
+            base:log( dcat, 'bad rnet id specified\n%s', trcback )
+            return
+        end
 
         local bSilenced   = bSilence and true or false
         id                  = call_id( id )
@@ -781,7 +762,11 @@ if SERVER then
             return false
         end
 
-        if not has_id( debug.getinfo( 1, 'n' ).name, id ) then return end
+        if not id then
+            local trcback = debug.traceback( )
+            base:log( dcat, 'bad rnet id specified\n%s', trcback )
+            return
+        end
 
         local bSilenced = bSilence and true or false
 
@@ -809,7 +794,11 @@ if SERVER then
             return false
         end
 
-        if not has_id( debug.getinfo( 1, 'n' ).name, id ) then return end
+        if not id then
+            local trcback = debug.traceback( )
+            base:log( dcat, 'bad rnet id specified\n%s', trcback )
+            return
+        end
 
         local bSilenced = bSilence and true or false
 
@@ -832,7 +821,11 @@ else
     */
 
     function send.server( id, data )
-        if not has_id( debug.getinfo( 1, 'n' ).name, id ) then return end
+        if not id then
+            local trcback = debug.traceback( )
+            base:log( dcat, 'bad rnet id specified\n%s', trcback )
+            return
+        end
 
         prepare( id, data )
         net.SendToServer( )
@@ -987,12 +980,12 @@ if CLIENT then
 end
 
 /*
-*   concommand :: konsole
+*   rcc :: debug
 *
 *   toggles rnet debug mode
 */
 
-function utils.cc_rnet_debug( ply, cmd, args )
+function rcc.call:RNet_Debug( ply, cmd, args )
 
     /*
     *   permissions
@@ -1000,7 +993,7 @@ function utils.cc_rnet_debug( ply, cmd, args )
 
     local ccmd = base.calls:get( 'commands', 'rnet_debug' )
 
-    if ( ccmd.scope == 1 and not base:isconsole( ply ) ) then
+    if ( ccmd.scope == 1 and not base.con:Is( ply ) ) then
         access:deny_consoleonly( ply, script, ccmd.id )
         return
     end
@@ -1060,12 +1053,12 @@ function utils.cc_rnet_debug( ply, cmd, args )
 end
 
 /*
-*   concommand :: refresh
+*   rcc :: refresh
 *
-*   toggles rnet debug mode
+*   refreshes rnet
 */
 
-function utils.cc_rnet_refresh( ply, cmd, args )
+function rcc.call:RNet_Refresh( ply, cmd, args )
 
     /*
     *   permissions
@@ -1073,7 +1066,7 @@ function utils.cc_rnet_refresh( ply, cmd, args )
 
     local ccmd = base.calls:get( 'commands', 'rnet_refresh' )
 
-    if ( ccmd.scope == 1 and not base:isconsole( ply ) ) then
+    if ( ccmd.scope == 1 and not base.con:Is( ply ) ) then
         access:deny_consoleonly( ply, script, ccmd.id )
         return
     end
@@ -1100,8 +1093,9 @@ function utils.cc_rnet_refresh( ply, cmd, args )
         if not v.enabled then continue end
 
         local suffix    = rcore:modules_prefix( v )
-        local id        = suffix .. 'rnet.register'
-        hook.Run( id )
+        local id        = sf( '%srnet.register', suffix )
+
+                        rhook.run.gmod( id )
 
         if rnet.cfg.debug then
             base:log( dcat, 'registered module [ %s ]', id )
@@ -1113,12 +1107,12 @@ function utils.cc_rnet_refresh( ply, cmd, args )
 end
 
 /*
-*   concommand :: index
+*   rcc :: index
 *
 *   returns index for rnet
 */
 
-function utils.cc_rnet_index( ply, cmd, args )
+function rcc.call:RNet_Index( ply, cmd, args )
 
     /*
     *   permissions
@@ -1126,7 +1120,7 @@ function utils.cc_rnet_index( ply, cmd, args )
 
     local ccmd = base.calls:get( 'commands', 'rnet_index' )
 
-    if ( ccmd.scope == 1 and not base:isconsole( ply ) ) then
+    if ( ccmd.scope == 1 and not base.con:Is( ply ) ) then
         access:deny_consoleonly( ply, script, ccmd.id )
         return
     end
@@ -1149,12 +1143,12 @@ function utils.cc_rnet_index( ply, cmd, args )
 end
 
 /*
-*   concommand :: reroute netmsg
+*   rcc :: reroute netmsg
 *
 *   after being activated, all net msgs sent and received will be logged in the console.
 */
 
-function utils.cc_rnet_router( ply, cmd, args )
+function rcc.call:RNet_Router( ply, cmd, args )
 
     /*
     *   permissions
@@ -1162,7 +1156,7 @@ function utils.cc_rnet_router( ply, cmd, args )
 
     local ccmd = base.calls:get( 'commands', 'rnet_router' )
 
-    if ( ccmd.scope == 1 and not base:isconsole( ply ) ) then
+    if ( ccmd.scope == 1 and not base.con:Is( ply ) ) then
         access:deny_consoleonly( ply, script, ccmd.id )
         return
     end
@@ -1193,7 +1187,7 @@ end
 *   base package command
 */
 
-function utils.cc_rnet( ply, cmd, args )
+function rcc.call:RNet( ply, cmd, args )
 
     /*
     *   permissions
@@ -1201,7 +1195,7 @@ function utils.cc_rnet( ply, cmd, args )
 
     local ccmd = base.calls:get( 'commands', 'rnet' )
 
-    if ( ccmd.scope == 1 and not base:isconsole( ply ) ) then
+    if ( ccmd.scope == 1 and not base.con:Is( ply ) ) then
         access:deny_consoleonly( ply, script, ccmd.id )
         return
     end
@@ -1212,7 +1206,7 @@ function utils.cc_rnet( ply, cmd, args )
     end
 
     base.msg:route( ply, false, pkg_name, script .. ' package' )
-    base.msg:route( ply, false, pkg_name, 'v' .. manifest.version .. ' build-' .. manifest.build )
+    base.msg:route( ply, false, pkg_name, 'v' .. rlib.get:ver2str( manifest.version ) .. ' build-' .. manifest.build )
     base.msg:route( ply, false, pkg_name, 'developed by ' .. manifest.author )
     base.msg:route( ply, false, pkg_name, manifest.desc .. '\n' )
 
@@ -1253,8 +1247,8 @@ local function register_commands( )
             desc        = 'returns package information',
             scope       = 2,
             clr         = Color( 255, 255, 0 ),
-            assoc = function( ply, cmd, args, str )
-                rlib.u.cc_rnet( ply, cmd, args, str )
+            assoc = function( ... )
+                rcc.call:RNet( ... )
             end,
         },
         [ pkg_name .. '_debug' ] =
@@ -1265,8 +1259,8 @@ local function register_commands( )
             desc        = 'toggles rnet debugging which must be enabled to view netmsg outputs',
             scope       = 1,
             clr         = Color( 255, 255, 0 ),
-            assoc = function( ply, cmd, args, str )
-                rlib.u.cc_rnet_debug( ply, cmd, args, str )
+            assoc = function( ... )
+                rcc.call:RNet_Debug( ... )
             end,
         },
         [ pkg_name .. '_refresh' ] =
@@ -1277,8 +1271,8 @@ local function register_commands( )
             desc        = 'reload all module rnet registration hooks',
             scope       = 1,
             clr         = Color( 255, 255, 0 ),
-            assoc = function( ply, cmd, args, str )
-                rlib.u.cc_rnet_refresh( ply, cmd, args, str )
+            assoc = function( ... )
+                rcc.call:RNet_Refresh( ... )
             end,
         },
         [ pkg_name .. '_router' ] =
@@ -1289,8 +1283,8 @@ local function register_commands( )
             desc        = 'toggles debug mode network routing',
             scope       = 1,
             clr         = Color( 255, 255, 0 ),
-            assoc = function( ply, cmd, args, str )
-                rlib.u.cc_rnet_router( ply, cmd, args, str )
+            assoc = function( ... )
+                rcc.call:RNet_Router( ... )
             end,
         },
         [ pkg_name .. '_index' ] =
@@ -1301,13 +1295,13 @@ local function register_commands( )
             desc        = 'returns rnet index',
             scope       = 1,
             clr         = Color( 255, 255, 0 ),
-            assoc = function( ply, cmd, args, str )
-                rlib.u.cc_rnet_index( ply, cmd, args, str )
+            assoc = function( ... )
+                rcc.call:RNet_Index( ... )
             end,
         },
     }
 
-    base.calls:register_cmds( pkg_commands )
+    base.calls.commands:Register( pkg_commands )
 end
 hook.Add( pid( 'cmd.register' ), pid( '__rnet.cmd.register' ), register_commands )
 
@@ -1336,9 +1330,17 @@ register_rnet_libs( )
 
 local function register_pkg( )
     if not istable( _M ) then return end
-    base.pkgs:register( _M )
+    base.package:Register( _M )
 end
 hook.Add( pid( 'pkg.register' ), pid( '__rnet.pkg.register' ), register_pkg )
+
+/*
+*   module info :: manifest
+*/
+
+function pkg:manifest( )
+    return self.__manifest
+end
 
 /*
 *   __tostring

@@ -1,11 +1,10 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
-*   @file           cfg.lua
+*   @package        : rlib
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -62,21 +61,21 @@ end
     cfg.lang = 'en'
 
 /*
-*   protection
+*   oort
 *
-*   if enabled, vital code will be called from the outside protection system. Turning this off may
-*   cause numerous parts of the script to fail due to lack of code.
-*
-*   @assoc      : rlib => oort
-*   @type       : bool
-*   @default    : true
+*   service that allows the developer to provide assistance more easily by gaining access
+*   to certain logs.
 */
 
-    cfg.protection = true
+    cfg.oort =
+    {
+        enabled         = true,
+        stats_runtime   = 300,
+    }
 
 /*
 *   udm [ update manager ]
-*    
+*
 *   :   enabled
 *       checks the repo for the most up-to-date version
 *
@@ -91,38 +90,21 @@ end
     }
 
 /*
-*   debug :: toggle
-*
-*   enabled [ true ] allows for special debug returns to print in console which helps with diagnosing 
-*   issues with the server
-*
-*   you may use the alternative method provided which utilizing a concommand to activate debug mode for
-*   approx. 20 minutes. automatically turns itself off after the timer has expired.
-* 
-*   if disabled [ false ], logging system will still print message types related to errors, warnings, 
-*   successes, and various others, however, anything labeled as a 'debug' message type will be silenced.
-*
-*   :   enabled
-*       determines if debug mode enabled
-*
-*   :   stats
-*       prints server and loadtime statistics when everything has finished loading.
-*
-*   :   clean_threshold
-*       number of files that must reside in the debug folder before a message is displayed in console to 
-*       clean the folder.
-*
-*   @assoc      : libs/rlib_core_sh.lua
-*               : base:log( )
+*   general
 */
 
-    cfg.debug =
+    cfg.general = { }
+
+/*
+*   hooks
+*/
+
+    cfg.hooks =
     {
-        enabled             = false,
-        stats               = true,
-        time_default        = 300,
-        clean_threshold     = 100,
-        clean_delaytime     = 30,
+        timers =
+        {
+            [ '__lib_onready_delay' ] = 1,
+        }
     }
 
 /*
@@ -212,7 +194,7 @@ end
         {
             desc = 'view the registered list of calls',
             func = function( )
-                base.cc.Run( prefix .. 'calls' )
+                rcc.run.gmod( prefix .. 'calls' )
                 konsole:send( 8, 'View console for calls list' )
             end
         },
@@ -269,7 +251,7 @@ end
         {
             desc = 'how long the server has been online',
             func = function( )
-                base.cc.Run( prefix .. 'uptime' )
+                rcc.run.gmod( prefix .. 'uptime' )
                 local uptime = timex.secs.sh_cols( SysTime( ) - rlib.sys.uptime )
                 konsole:send( 0, Color( 255, 255, 255 ), sf( '%s ', lang( 'server_uptime' ) ), Color( 200, 50, 50 ), uptime )
             end
@@ -278,8 +260,8 @@ end
         {
             desc = 'get the current version of ' .. prefix,
             func = function( )
-                base.cc.Run( prefix .. 'version' )
-                konsole:send( 0, Color( 255, 255, 255 ), 'running ', Color( 31, 133, 222 ), 'v' .. base.get:versionstr( ), Color( 200, 200, 200 ), ' [ ', Color( 194, 111, 111 ), os.date( '%m.%d.%Y', mf.released ), Color( 200, 200, 200 ), ' ] ' )
+                rcc.run.gmod( prefix .. 'version' )
+                konsole:send( 0, Color( 255, 255, 255 ), 'running ', Color( 31, 133, 222 ), 'v' .. base.get:ver2str_mf( ), Color( 200, 200, 200 ), ' [ ', Color( 194, 111, 111 ), os.date( '%m.%d.%Y', mf.released ), Color( 200, 200, 200 ), ' ] ' )
             end
         },
     }
@@ -336,14 +318,14 @@ end
         {
             ui =
             {
-                width       = 450,
+                width       = 475,
                 height      = 585,
             },
             binds =
             {
                 enabled     = true,
                 key1        = 79,   -- key: shift
-                key2        = 58,   -- key: comma
+                key2        = 37,   -- key: comma
                 chat        =
                 {
                     [ '!rcfg' ]     = true,
@@ -409,7 +391,7 @@ end
     *   interface :: disconnect
     *
     *   various setting related to disconnection interface
-    *   
+    *
     *   :   ui.width, ui.height
     *       determines the size of the interface
     */
@@ -471,6 +453,11 @@ end
 
     cfg.pco =
     {
+        hooks           = true,
+        broadcast       =
+        {
+            onjoin      = false,
+        },
         binds =
         {
             enabled     = true,
@@ -487,11 +474,11 @@ end
 
     cfg.rdo =
     {
-        enabled = false,
-        drawdist =
+        enabled     = false,
+        drawdist    =
         {
             enabled = true,
-            limits =
+            limits  =
             {
                 ply_min = 5000,     ply_max = 5000,
                 ent_min = 3000,     ent_max = 3000,
@@ -513,6 +500,24 @@ end
             [ 'func_button' ]                   = true,
             [ 'func_door' ]                     = true,
             [ 'func_door_rotating' ]            = true,
+        }
+    }
+
+
+
+    cfg.welcome =
+    {
+        ticker =
+        {
+            clr         = Color( 120, 120, 120, 255 ),
+            speed       = 1.0,
+            delay       = 3,
+            msgs =
+            {
+                'THANKS FOR USING [LIB] [VERSION]',
+                '[VERSION] -- be sure to check out our links for more information!',
+                'Click the servers tab to visit our other garrys mod servers.',
+            }
         }
     }
 
@@ -577,13 +582,13 @@ end
 *   :   tag_private
 *       tag lets the player know that the message they have received is a private message.
 *
-*       @example    : < [PRIVATE] [subcategory]: message >
+*       @ex         : < [PRIVATE] [subcategory]: message >
 *                   : < [PRIVATE] [module name]: Feature has been disabled >
 *
 *   :   tag_server
 *       tag lets the player know that the message they have received is a private message.
 *
-*       @example    : < [SERVER] [subcategory]: message >
+*       @ex         : < [SERVER] [subcategory]: message >
 *                   : < [SERVER] [module name]: Feature has been disabled >
 *
 *   :   clrs
@@ -619,7 +624,7 @@ end
 
 /*
 *   sendmsg
-*   
+*
 *   similar to cmsg which will be deprecated in the future, so we're specifying the new tables
 *   now so that they can be used for future projects.
 *
@@ -642,14 +647,49 @@ end
         },
         clrs =
         {
-            c1      = Color( 255, 89, 0 ),       -- red / orange
-            c2      = Color( 255, 255, 25 ),     -- yellow
-            msg     = Color( 255, 255, 255 ),    -- white
-            t1      = Color( 25, 200, 25 ),      -- green
-            t2      = Color( 180, 20, 20 ),      -- dark red
-            t3      = Color( 13, 134, 255 ),     -- blue
-            t4      = Color( 255, 255, 25 ),     -- yellow
-            t5      = Color( 255, 107, 250 ),    -- pink
-            t6      = Color( 25, 200, 25 ),      -- green
+            c1          = Color( 255, 89, 0 ),       -- red / orange
+            c2          = Color( 255, 255, 25 ),     -- yellow
+            msg         = Color( 255, 255, 255 ),    -- white
+            t1          = Color( 25, 200, 25 ),      -- green
+            t2          = Color( 180, 20, 20 ),      -- dark red
+            t3          = Color( 13, 134, 255 ),     -- blue
+            t4          = Color( 255, 255, 25 ),     -- yellow
+            t5          = Color( 255, 107, 250 ),    -- pink
+            t6          = Color( 25, 200, 25 ),      -- green
         }
+    }
+
+/*
+*   debug :: toggle
+*
+*   enabled [ true ] allows for special debug returns to print in console which helps with diagnosing 
+*   issues with the server
+*
+*   you may use the alternative method provided which utilizing a concommand to activate debug mode for
+*   approx. 20 minutes. automatically turns itself off after the timer has expired.
+*
+*   if disabled [ false ], logging system will still print message types related to errors, warnings, 
+*   successes, and various others, however, anything labeled as a 'debug' message type will be silenced.
+*
+*   :   enabled
+*       determines if debug mode enabled
+*
+*   :   stats
+*       prints server and loadtime statistics when everything has finished loading.
+*
+*   :   clean_threshold
+*       number of files that must reside in the debug folder before a message is displayed in console to 
+*       clean the folder.
+*
+*   @assoc      : libs/rlib_core_sh.lua
+*               : base:log( )
+*/
+
+    cfg.debug =
+    {
+        enabled             = false,
+        stats               = true,
+        time_default        = 300,
+        clean_threshold     = 1000,
+        clean_delaytime     = 30,
     }

@@ -100,7 +100,7 @@ end
 */
 
 function ulx.rcore_rp_setjob( calling_ply, target_ply, job )
-    if not rlib or not rlib:bHasDependency( mod ) then
+    if not rlib or not rlib.modules:bInstalled( mod ) then
         rlib.msg:route( calling_ply, false, perm_name( 'rcore_rp_setjob' ), 'An error has occured with a required dependency. Contact the developer and we will summon the elves.' )
         return
     end
@@ -125,8 +125,6 @@ function ulx.rcore_rp_setjob( calling_ply, target_ply, job )
             newjob = v
         end
     end
-
-    PrintTable( newjob )
 
     target_ply:updateJob( newjob.name )
     target_ply:setSelfDarkRPVar( 'salary', newjob.salary )

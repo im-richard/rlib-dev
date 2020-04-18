@@ -1,7 +1,7 @@
 /*
 *   @package        : rlib
 *   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      : (c) 2018 - 2020
+*   @copyright      : (C) 2018 - 2020
 *   @since          : 2.0.0
 *   @website        : https://rlib.io
 *   @docs           : https://docs.rlib.io
@@ -25,6 +25,7 @@ local cfg                   = base.settings
 local helper                = base.h
 local design                = base.d
 local ui                    = base.i
+local cvar                  = base.v
 
 /*
 *   localization :: glua
@@ -100,7 +101,7 @@ function PANEL:Init( )
     *   display parent :: static || anim
     */
 
-    if helper:cvar_bool( 'rlib_animations_enabled' ) then
+    if cvar:GetBool( 'rlib_animations_enabled' ) then
         self:SetPos( ( ScrW( ) / 2 ) - ( ui_w / 2 ), ScrH( ) + ui_h )
         self:MoveTo( ( ScrW( ) / 2 ) - ( ui_w / 2 ), ( ScrH( ) / 2 ) - (  ui_h / 2 ), 0.4, 0, -1 )
     else
@@ -113,12 +114,12 @@ function PANEL:Init( )
 
     self.lblTitle               = ui.new( 'lbl', self           )
     :notext                     (                               )
-    :font                       ( pref( 'dc.title' )            )
+    :font                       ( pref( 'dc_title' )            )
 
                                 :draw ( function( s, w, h )
                                     if not self.title or self.title == '' then self.title = 'about' end
-                                    draw.SimpleText( utf8.char( 9930 ), pref( 'dc.icon' ), 5, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( self.title, pref( 'dc.title' ), 30, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( utf8.char( 9930 ), pref( 'dc_icon' ), 5, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( self.title, pref( 'dc_title' ), 30, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -136,7 +137,7 @@ function PANEL:Init( )
 
                                 :draw ( function( s, w, h )
                                     local clr_txt = s.hover and Color( 200, 55, 55, 255 ) or Color( 237, 237, 237, 255 )
-                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'dc.exit' ), w / 2 - 10, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'dc_exit' ), w / 2 - 10, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -175,7 +176,7 @@ function PANEL:Init( )
 
                                     local clr_rgb = Color( r, g, b )
 
-                                    draw.SimpleText( lang( 'dc_leave' ), pref( 'dc.name' ), w / 2, h / 2, clr_rgb, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( lang( 'dc_leave' ), pref( 'dc_name' ), w / 2, h / 2, clr_rgb, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -201,7 +202,7 @@ function PANEL:Init( )
     self.l_status               = ui.new( 'lbl', self.p_status  )
     :static                     ( FILL                          )
     :margin                     ( 3, 3, 3, 1                    )
-    :textadv                    ( Color( 255, 255, 255, 255 ), pref( 'dc.msg' ), lang( 'dc_msg' ), true )
+    :textadv                    ( Color( 255, 255, 255, 255 ), pref( 'dc_msg' ), lang( 'dc_msg' ), true )
     :align                      ( 5                             )
 
     /*
@@ -251,8 +252,8 @@ function PANEL:Init( )
                                     end
 
                                     local clr_txt = s.hover and Color( 255, 255, 255, 255 ) or Color( 255, 255, 255, 255 )
-                                    --draw.SimpleText( helper.get:utf8( 'close' ), pref( 'dc.exit' ), 2, h / 2 + 4, clr_txt, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( lang( 'dc_opt_stay' ), pref( 'dc.btn' ), w / 2, h / 2, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    --draw.SimpleText( helper.get:utf8( 'close' ), pref( 'dc_exit' ), 2, h / 2 + 4, clr_txt, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( lang( 'dc_opt_stay' ), pref( 'dc_btn' ), w / 2, h / 2, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -277,8 +278,8 @@ function PANEL:Init( )
                                     end
 
                                     local clr_txt = s.hover and Color( 255, 255, 255, 255 ) or Color( 255, 255, 255, 255 )
-                                    --draw.SimpleText( helper.get:utf8( 'close' ), pref( 'dc.exit' ), 2, h / 2 + 4, clr_txt, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( lang( 'dc_opt_leave' ), pref( 'dc.btn' ), w / 2, h / 2, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    --draw.SimpleText( helper.get:utf8( 'close' ), pref( 'dc_exit' ), 2, h / 2 + 4, clr_txt, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( lang( 'dc_opt_leave' ), pref( 'dc_btn' ), w / 2, h / 2, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
                                 :oc( function( s )

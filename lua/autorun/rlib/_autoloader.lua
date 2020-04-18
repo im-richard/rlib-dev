@@ -51,8 +51,8 @@ function rlib.autoload:Run( parent )
     mf.repo                     = 'https://github.com/im-richard/rlib/'
     mf.docs                     = 'https://docs.rlib.io/'
     mf.about                    = [[rlib is a glua library written for garrys mod which contains a variety of commonly used functions that are required for certain scripts to run properly. Package includes both rlib + rcore which act as the overall foundation which other scripts will rest within as a series of modules. ]]
-    mf.released                 = 1583572699
-    mf.version                  = { 3, 0, 3 }
+    mf.released                 = 1586850509
+    mf.version                  = { 3, 1, 0 }
     mf.showcopyright            = true
 
     /*
@@ -67,6 +67,8 @@ function rlib.autoload:Run( parent )
             { file = 'define',                  scope = 2 },
             { file = 'register',                scope = 2 },
             { file = 'permissions',             scope = 2 },
+            { file = 'cvar/sh_cvar',            scope = 2 },
+            { file = 'cvar/cl_cvar',            scope = 3 },
             { file = 'materials',               scope = 3 },
             { file = 'storage',                 scope = 2 },
             { file = 'modules',                 scope = 2 },
@@ -80,22 +82,27 @@ function rlib.autoload:Run( parent )
             { file = 'ccl',                     scope = 3 },
             { file = 'tools',                   scope = 3 },
             { file = 'commands',                scope = 1 },
+            { file = 'rcc/sv_rcc',              scope = 1 },
+            { file = 'rcc/sh_rcc',              scope = 2 },
+            { file = 'rcc/cl_rcc',              scope = 3 },
             { file = 'pmeta',                   scope = 2 },
             { file = 'uclass',                  scope = 3 },
             { file = 'design',                  scope = 3 },
         },
         pre =
         {
+            'rcc',
             'calc',
             'rnet',
             'rhook',
-            'rcc',
             'timex',
+            'promise',
         },
         post =
         {
             'glon',
             'spew',
+            'orion',
         },
     }
 
@@ -121,18 +128,27 @@ function rlib.autoload:Run( parent )
 
     mf.astra =
     {
-        oort_status             = false,
-        is_latest               = false,
-        branch                  = 'https://udm.rlib.io/rlib/%s',
+        oort =
+        {
+            validated           = false,
+            auth_id             = 0,
+            sess_id             = 0,
+            has_latest          = false,
+            url                 = 'https://oort.rlib.io',
+        },
+        udm =
+        {
+            branch              = 'https://udm.rlib.io/rlib/%s',
+            hash                = '6D723D31DAFDCD92751C49EAFE7C2AD2275221B4',
+            response            = { },
+        },
         auth                    = 'https://auth.rlib.io/',
-        hash                    = '6D723D31DAFDCD92751C49EAFE7C2AD2275221B4',
         svg                     =
         {
             stats               = 'http://hits.dwyl.io/iamrichardt/rlib-stats-interface.svg',
             updated             = 'https://img.shields.io/github/last-commit/iamrichardt/rlib.svg?label=updated',
             size                = 'https://img.shields.io/github/repo-size/iamrichardt/rlib.svg?color=%23FF1B67&label=size&logo=lua',
         },
-        response                = { },
     }
 
     /*
@@ -209,21 +225,30 @@ function rlib.autoload:Run( parent )
     *       base.p          : panels
     *       base.s          : storage
     *       base.t          : tools
-    *       base.u          : utils
-    *       base.v          : convars
     *       base.w          : workshops
     *
+    *       base.calls      : registered calls
+    *       base.checksum   : library checksum storage
     *       base.sys        : system
-    *       base.pkgs       : workshop pkgs
+    *       base.package    : module packages
     */
 
         /*
         *   base :: struct
         */
 
-        local ind_base = { 'a', 'c', 'd', 'i', 'k', 'l', 'm', 'o', 'p', 'r', 's', 't', 'u', 'v', 'w', 'calls', 'checksum', 'cc', 'cvar', '_def', 'fonts', 'modules', 'msg', 'sys', 'register', 'resources', 'pkgs', 'alias', 'get', 'oort', 'udm' }
+        local ind_base = { 'a', 'c', 'd', 'i', 'k', 'l', 'm', 'o', 'p', 'r', 's', 't', 'v', 'w', 'calls', 'checksum', 'con', 'cvar', '_def', 'fonts', 'modules', 'msg', 'sys', 'register', 'resources', 'package', 'alias', 'get', 'oort', 'udm' }
         for k, v in ipairs( ind_base ) do
             base[ v ] = { }
+        end
+
+        /*
+        *   calls :: struct
+        */
+
+        local ind_calls = { 'commands', 'hooks', 'net', 'timers' }
+        for k, v in ipairs( ind_calls ) do
+            base.calls[ v ] = { }
         end
 
         /*
@@ -234,7 +259,7 @@ function rlib.autoload:Run( parent )
             base.h = base.h
         else
             base.h = { }
-            local to_helper = { 'cvar', 'ent', 'get', 'msg', 'new', 'now', 'ok', 'ply', 'str', 'rp', 'util', 'who' }
+            local to_helper = { 'ent', 'get', 'msg', 'new', 'now', 'ok', 'ply', 'str', 'util', 'who' }
             for k, v in ipairs( to_helper ) do
                 base.h[ v ] = { }
             end
@@ -255,7 +280,7 @@ function rlib.autoload:Run( parent )
         */
 
         base.t = base.t or { }
-        local to_tools = { 'alogs', 'asay', 'dc', 'konsole', 'pco', 'rdo', 'language', 'rmain', 'mviewer', 'rcfg', 'report' }
+        local to_tools = { 'alogs', 'asay', 'dc', 'konsole', 'pco', 'rdo', 'language', 'rmain', 'mviewer', 'rcfg', 'report', 'welcome' }
         for k, v in ipairs( to_tools ) do
             base.t[ v ] = { }
         end
@@ -327,12 +352,34 @@ loaded and are now ready to install additional modules.
     end
 
     /*
-    *   module inc
+    *   localization
     */
 
-    if file.Exists( 'includes/modules/sha1.lua', 'LUA' ) then
-        include( 'includes/modules/sha1.lua' )
-        if SERVER then AddCSLuaFile( 'includes/modules/sha1.lua' ) end
+    local cfg           = base.settings
+    local path_lib      = mf.folder
+    local sf            = string.format
+    local inc           = include
+    local acs           = AddCSLuaFile
+
+    /*
+    *   load lua modules
+    */
+
+    local modules_lua =
+    {
+        'deferred',
+        'rclass',
+        'sha1',
+        'json',
+        'rbit',
+        'ipcrypt',
+    }
+
+    for k, v in ipairs( modules_lua ) do
+        if file.Exists( 'includes/modules/' .. v .. '.lua', 'LUA' ) then
+            inc( 'includes/modules/' .. v .. '.lua' )
+            if SERVER then acs( 'includes/modules/' .. v .. '.lua' ) end
+        end
     end
 
     /*
@@ -380,23 +427,14 @@ loaded and are now ready to install additional modules.
     _G.rresources = { }
 
     /*
-    *   localization
-    */
-
-    local cfg           = base.settings
-    local prefix        = mf.prefix
-    local path_lib      = mf.folder
-    local sf            = string.format
-
-    /*
     *   parent manifest :: load calls
     */
 
     for _, v in ipairs( parent.manifest.calls ) do
         local path_c = sf( '%s/%s/%s.lua', path_lib, 'calls', v )
         if not file.Exists( path_c, 'LUA' ) then continue end
-        if SERVER then AddCSLuaFile( path_c ) end
-        include( path_c )
+        if SERVER then acs( path_c ) end
+        inc( path_c )
     end
 
     /*
@@ -406,8 +444,8 @@ loaded and are now ready to install additional modules.
     for _, v in ipairs( parent.manifest.resources ) do
         local path = sf( '%s/%s/%s.lua', path_lib, 'resources', v )
         if not file.Exists( path, 'LUA' ) then continue end
-        if SERVER then AddCSLuaFile( path ) end
-        include( path )
+        if SERVER then acs( path ) end
+        inc( path )
     end
 
     /*
@@ -417,8 +455,8 @@ loaded and are now ready to install additional modules.
     for _, v in ipairs( mf.packages.pre ) do
         local path = sf( '%s/%s/%s.lua', path_lib, 'packages', v )
         if not file.Exists( path, 'LUA' ) then continue end
-        if SERVER then AddCSLuaFile( path ) end
-        include( path )
+        if SERVER then acs( path ) end
+        inc( path )
     end
 
     /*
@@ -454,23 +492,23 @@ loaded and are now ready to install additional modules.
 
         if v.scope == 1 then
             if not file.Exists( path_prio, 'LUA' ) then continue end
-            if SERVER then include( path_prio ) end
+            if SERVER then inc( path_prio ) end
             if cfg.debug.enabled then
                 MsgC( Color( 255, 255, 0 ), '[' .. mf.name .. '] [L-SV] ' .. path_prio .. '\n' )
             end
         elseif v.scope == 2 then
             if not file.Exists( path_prio, 'LUA' ) then continue end
-            include( path_prio )
-            if SERVER then AddCSLuaFile( path_prio ) end
+            inc( path_prio )
+            if SERVER then acs( path_prio ) end
             if cfg.debug.enabled then
                 MsgC( Color( 255, 255, 0 ), '[' .. mf.name .. '] [L-SH] ' .. path_prio .. '\n' )
             end
         elseif v.scope == 3 then
             if not file.Exists( path_prio, 'LUA' ) then continue end
             if SERVER then
-                AddCSLuaFile( path_prio )
+                acs( path_prio )
             else
-                include( path_prio )
+                inc( path_prio )
             end
             if cfg.debug.enabled then
                 MsgC( Color( 255, 255, 0), '[' .. mf.name .. '] [L-CL] ' .. path_prio .. '\n' )
@@ -485,8 +523,8 @@ loaded and are now ready to install additional modules.
     for _, v in ipairs( mf.packages.post ) do
         local path = sf( '%s/%s/%s.lua', path_lib, 'packages', v )
         if not file.Exists( path, 'LUA' ) then continue end
-        if SERVER then AddCSLuaFile( path ) end
-        include( path )
+        if SERVER then acs( path ) end
+        inc( path )
     end
 
     /*
@@ -498,8 +536,8 @@ loaded and are now ready to install additional modules.
 
     for v in base.h.get.data( files ) do
         local path = sf( '%s/%s', path_lang, v )
-        include( path )
-        AddCSLuaFile( path )
+        inc( path )
+        acs( path )
         base:log( 6, '+ lang [ %s ]', path )
     end
 
@@ -513,9 +551,9 @@ loaded and are now ready to install additional modules.
     for ui in base.h.get.data( files_obj ) do
         local path = sf( '%s/%s/%s', path_lib, 'obj', ui )
         if SERVER then
-            AddCSLuaFile( path )
+            acs( path )
         else
-            include( path )
+            inc( path )
         end
         base:log( 6, '+ obj [ %s ]', path )
     end
@@ -530,9 +568,9 @@ loaded and are now ready to install additional modules.
     for inf in base.h.get.data( files_inf ) do
         local path = sf( '%s/%s/%s', path_lib, 'layout', inf )
         if SERVER then
-            AddCSLuaFile( path )
+            acs( path )
         else
-            include( path )
+            inc( path )
         end
         base:log( 6, '+ lo [ %s ]', path )
     end
@@ -559,6 +597,14 @@ loaded and are now ready to install additional modules.
     *   hook :: rlib post loader
     */
 
-    hook.Run( prefix .. 'loader.post' )
+    rhook.run.rlib( 'rlib_loader_post' )
+
+    /*
+    *   enable hibernation thinking
+    */
+
+    if SERVER then
+        RunConsoleCommand( 'sv_hibernate_think', '1' )
+    end
 
 end

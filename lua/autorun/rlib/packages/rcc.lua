@@ -1,10 +1,11 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          3.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
+*   @package        : rlib
+*   @module         : rcc
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2020 - 2020
+*   @since          : 3.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -23,20 +24,6 @@ rlib                    = rlib or { }
 local base              = rlib
 local mf                = base.manifest
 local prefix            = mf.prefix
-local script            = mf.name
-
-/*
-*   pkg declarations
-*/
-
-    local manifest =
-    {
-        author          = 'richard',
-        desc            = 'console commands',
-        build           = 121919.1,
-        version         = '1.0.0',
-        debug_id        = 'rcc.debug.delay',
-    }
 
 /*
 *   module declarations
@@ -48,7 +35,6 @@ local dcat          = 9
 *   localizations
 */
 
-local math          = math
 local module        = module
 local sf            = string.format
 
@@ -76,13 +62,13 @@ end
 */
 
 local function pref( id, suffix )
-    local affix = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or prefix
-    affix = affix:sub( -1 ) ~= '.' and string.format( '%s.', affix ) or affix
+    local affix     = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or prefix
+    affix           = affix:sub( -1 ) ~= '.' and sf( '%s.', affix ) or affix
 
-    id = isstring( id ) and id or 'noname'
-    id = id:gsub( '[%c%s]', '.' )
+    id              = isstring( id ) and id or 'noname'
+    id              = id:gsub( '[%c%s]', '.' )
 
-    return string.format( '%s%s', affix, id )
+    return sf( '%s%s', affix, id )
 end
 
 /*
@@ -108,6 +94,19 @@ local pkg           = rcc
 local pkg_name      = _NAME or 'rcc'
 
 /*
+*   pkg declarations
+*/
+
+local manifest =
+{
+    author          = 'richard',
+    desc            = 'console commands',
+    build           = 032620,
+    version         = { 2, 0, 0 },
+    debug_id        = 'rcc.debug.delay',
+}
+
+/*
 *   required tables
 */
 
@@ -116,14 +115,16 @@ sys                 = sys or { }
 new                 = new or { }
 run                 = run or { }
 drop                = drop or { }
+call                = call or { }
+storage             = storage or { }
 
 /*
 *   net :: debugging
-*   
+*
 *   determines if debugging mode is enabled
 */
 
-cfg.debug = cfg.debug or false
+cfg.debug           = cfg.debug or false
 
 /*
 *	prefix :: getid
@@ -140,14 +141,6 @@ local function gid( id )
     id = call_id( id )
 
     return id
-end
-
-/*
-*   module info :: manifest
-*/
-
-function pkg:manifest( )
-    return self.__manifest
 end
 
 /*
@@ -218,13 +211,89 @@ function run.gmod( ... )
 end
 
 /*
+*   register
+*
+*   @param  : str cmd
+*   @param  : func fn
+*/
+
+function register( cmd, fn )
+    if not isstring( cmd ) then return end
+    storage[ cmd ] = fn
+end
+
+/*
+*   get
+*
+*   @param  : str cmd
+*   @return : func
+*/
+
+function get( cmd )
+    if not isstring( cmd ) then return end
+    return storage[ cmd ] or nil
+end
+
+/*
+*   rcc :: prepare
+*
+*   takes all of the registered commands through rlib and turns them into
+*   a command usable with rcc
+*
+*   accepts an alternative source table but struct must be the same as the
+*   original.
+*
+*   @call   : rcc.prepare( )
+*
+*   @param  : tbl source
+*   @return : void
+*/
+
+function prepare( source )
+
+    source = istable( source ) and source or _G.rcalls.commands
+
+    for k, v in pairs( source ) do
+        if not v.enabled then continue end
+
+        if SERVER and ( v.scope == 1 or v.scope == 2 ) then
+            local fn = rcc.get( k )
+            if not fn then fn = v.assoc end
+            rcc.new.gmod( v.id, fn )
+            if v.alias then
+                rcc.new.gmod( v.alias, fn )
+            end
+        elseif CLIENT and ( v.scope == 2 or v.scope == 3 ) then
+            local fn = rcc.get( k )
+            if not fn then fn = v.assoc end
+            rcc.new.gmod( v.id, fn )
+            if v.alias then
+                rcc.new.gmod( v.alias, fn )
+            end
+        else
+            continue
+        end
+
+        if SERVER and v.pubc then
+            -- register commands with public triggers
+            local id                = isstring( v.pubc ) and v.pubc
+            _G.rcalls.pubc          = _G.rcalls.pubc or { }
+            _G.rcalls.pubc[ id ]    = { cmd = id, func = rcc.get( k ) }
+
+            sys.calls               = ( sys.calls or 0 ) + 1
+        end
+    end
+
+end
+
+/*
 *   register :: commands
 */
 
 local function register_commands( )
     local pkg_commands = { }
 
-    base.calls:register_cmds( pkg_commands )
+    base.calls.commands:Register( pkg_commands )
 end
 hook.Add( pid( 'cmd.register' ), pid( '__rcc.cmd.register' ), register_commands )
 
@@ -234,9 +303,17 @@ hook.Add( pid( 'cmd.register' ), pid( '__rcc.cmd.register' ), register_commands 
 
 local function register_pkg( )
     if not istable( _M ) then return end
-    base.pkgs:register( _M )
+    base.package:Register( _M )
 end
 hook.Add( pid( 'pkg.register' ), pid( '__rcc.pkg.register' ), register_pkg )
+
+/*
+*   module info :: manifest
+*/
+
+function pkg:manifest( )
+    return self.__manifest
+end
 
 /*
 *   __tostring

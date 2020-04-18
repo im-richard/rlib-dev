@@ -1,11 +1,10 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
-*   @file           design.lua
+*   @package        : rlib
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -38,34 +37,24 @@ local konsole           = base.k
 *   i absolutely hate having to do this, but for squeezing out every bit of performance, we need to.
 */
 
-local pairs             = pairs
 local ipairs            = ipairs
-local type              = type
-local error             = error
-local print             = print
-local GetConVar         = GetConVar
-local tonumber          = tonumber
 local tostring          = tostring
 local IsValid           = IsValid
 local istable           = istable
-local isfunction        = isfunction
-local isentity          = isentity
 local isnumber          = isnumber
 local IsColor           = IsColor
 local Color             = Color
 local Material          = Material
-local ScreenScale       = ScreenScale
 local gui               = gui
 local vgui              = vgui
 local input             = input
 local string            = string
-local sf                = string.format
 local table             = table
-local player            = player
 local math              = math
 local surface           = surface
 local draw              = draw
 local render            = render
+local sf                = string.format
 
 /*
 *   Localized translation func
@@ -95,12 +84,6 @@ RLIB_TALIGN_C       = 5
 RLIB_TALIGN_R       = 6
 RLIB_TALIGN_T       = 8
 RLIB_TALIGN_B       = 2
-
-/*
-*   metatables
-*/
-
-local dmeta = FindMetaTable( 'Panel' )
 
 /*
 *   design :: blur
@@ -160,7 +143,7 @@ function design.blurself( clr, amt, amplify )
         surface.DrawTexturedRect( x * -1, y * -1, ScrW( ), ScrH( ) )
     end
 
-    surface.SetDrawColor( clr.a, clr.g, clr.b, clr.a * frac )
+    surface.SetDrawColor( clr.r, clr.g, clr.b, clr.a * frac )
     surface.DrawRect( x * -1, y * -1, ScrW(), ScrH() )
 
     DisableClipping( false )
@@ -433,7 +416,7 @@ function design.text( text, x, y, clr, fnt, align_x, align_y )
     x           = isnumber( x ) and x or 0
     y           = isnumber( y ) and y or 0
     clr         = IsColor( clr ) and clr or Color( 255, 255, 255, 255 )
-    fnt         = isstring( fnt ) and fnt or ( pref( 'sys.text.default' ) )
+    fnt         = isstring( fnt ) and fnt or ( pref( 'sys_text_default' ) )
     align_x     = align_x or TEXT_ALIGN_LEFT
     align_y     = align_y or TEXT_ALIGN_TOP
 
@@ -494,7 +477,7 @@ function design.text_adv( text, x, y, clr, fnt, align_x )
     x           = isnumber( x ) and x or 0
     y           = isnumber( y ) and y or 0
     clr         = IsColor( clr ) and clr or Color( 255, 255, 255, 255 )
-    fnt         = isstring( fnt ) and fnt or ( pref( 'sys.text.default' ) )
+    fnt         = isstring( fnt ) and fnt or ( pref( 'sys_text_default' ) )
     align_x     = align_x or TEXT_ALIGN_LEFT
 
     local pos_x, pos_y = x, y
@@ -506,7 +489,7 @@ function design.text_adv( text, x, y, clr, fnt, align_x )
     for str in string.gmatch( text, '[^\n]*' ) do
         if #str > 0 then
             if string.find( str, '\t' ) then
-                for tabs, str_alt in string.gmatch( str, '(\t*)([^\t]*)' ) do
+                for tabs, str_alt in string.gmatch( str, '(\t*)([^\t]*)' ) do --'
                     pos_x = math.ceil( ( pos_x + tab_w * math.max( #tabs - 1, 0 ) ) / tab_w ) * tab_w
 
                     if #str_alt > 0 then
@@ -871,7 +854,7 @@ end
 *   @param  : int y
 *   @param  : int radius
 *   @param  : int seg
-@   @param  : clr
+*   @param  : clr
 */
 
 function design.circle( x, y, radius, seg, clr )
@@ -1181,7 +1164,7 @@ function design.indicator( text, uid, mat, ftop, ttop, font, dur )
     mat     = mat or nil
     ftop    = ftop or -20
     ttop    = ttop or 85
-    font    = font or pref( 'sys.hud.indicator' )
+    font    = font or pref( 'sys_hud_indicator' )
     dur     = isnumber( dur ) and dur or 3
 
     local fade_time     = 0.3
@@ -1239,8 +1222,8 @@ function design.indicator_t2( text, text_sub, uid, font, font2, dur )
     if not isstring( text ) then return end
 
     uid     = uid or helper.new.id( 10 )
-    font    = font or pref( 'sys.hud.s2.indicator' )
-    font2   = font2 or pref( 'sys.hud.s2.indicator.sub' )
+    font    = font or pref( 'sys_hud_s2_indicator' )
+    font2   = font2 or pref( 'sys_hud_s2_indicator_sub' )
     dur     = isnumber( dur ) and dur or 8
 
     /*
@@ -1254,9 +1237,6 @@ function design.indicator_t2( text, text_sub, uid, font, font2, dur )
     local fade_time     = 2
     local start_time    = CurTime( )
     local alpha         = 255
-
-    local tbar_pos      = 0
-    local bbar_pos      = ScrH( )
 
     local bar_top_pos_s = 0
     local bar_top_pos_e = ScrH( ) / 2 - 100
@@ -1315,12 +1295,12 @@ end
 *
 *   @param  : int, str, tbl, clr mtype
 *   @param  : str msg
-*   @param  : int duration
+*   @param  : int dur
 *   @param  : int startpos
 *   @param  : bool bFull
 */
 
-function design:notify( mtype, msg, duration, startpos, bFull )
+function design:notify( mtype, msg, dur, startpos, bFull )
 
     /*
     *   destroy existing
@@ -1332,15 +1312,15 @@ function design:notify( mtype, msg, duration, startpos, bFull )
     *   mtype colorization
     */
 
-    local clr_bg, clr_text = Color( 30, 30, 30, 255 ), Color( 255, 255, 255, 255 )
+    local clr_box, clr_txt = Color( 30, 30, 30, 255 ), Color( 255, 255, 255, 255 )
     if mtype and mtype ~= 'def' then
         if IsColor( mtype ) then
-            clr_bg = mtype
+            clr_box      = mtype
         elseif isnumber( mtype ) then
-            clr_bg = base._def.lc_rgb[ mtype ]
+            clr_box      = base._def.lc_rgb[ mtype ]
         elseif istable( mtype ) and not IsColor( mtype ) then
-            clr_bg = mtype.clr_bg or Color( 30, 30, 30, 255 )
-            clr_text = mtype.clr_text or Color( 255, 255, 255, 255 )
+            clr_box      = mtype.clr_box or Color( 30, 30, 30, 255 )
+            clr_txt    = mtype.clr_txt or Color( 255, 255, 255, 255 )
         end
     end
 
@@ -1348,12 +1328,12 @@ function design:notify( mtype, msg, duration, startpos, bFull )
         mtype, msg = 2, 'an error occured'
     end
 
-    duration = isnumber( duration ) and duration or 10
-    startpos = isnumber( startpos ) and startpos or 1
+    dur                 = isnumber( dur ) and dur or 10
+    startpos            = isnumber( startpos ) and startpos or 1
 
-    surface.SetFont( pref( 'sys.notify.text' ) )
+    surface.SetFont( pref( 'sys_notify_text' ) )
 
-    local ui_w, ui_h    = ScrW( ), draw.GetFontHeight( pref( 'sys.notify.text' ) ) + 18
+    local ui_w, ui_h    = ScrW( ), draw.GetFontHeight( pref( 'sys_notify_text' ) ) + 18
     local sz_w, sz_h    = bFull and ScrW( ) or surface.GetTextSize( msg )
     sz_w                = ( bFull and sz_w ) or ( sz_w + 100 )
 
@@ -1365,36 +1345,35 @@ function design:notify( mtype, msg, duration, startpos, bFull )
     *   btn :: close
     */
 
-    local obj       = ui.new( 'btn'         )
-    :bsetup         (                       )
-    :size           ( sz_w, ui_h            )
-    :pos            ( pos_w, pos_h          )
-    :front          (                       )
-    :aligntop       ( pos_m2                )
-    :textadv        ( clr_text, pref( 'sys.notify.text' ), msg )
-    :m2f            (                       )
+    local obj           = ui.new( 'btn'                 )
+    :bsetup             (                               )
+    :size               ( sz_w, ui_h                    )
+    :pos                ( pos_w, pos_h                  )
+    :aligntop           ( pos_m2                        )
+    :textadv            ( clr_txt, pref( 'sys_notify_text' ), msg )
+    :drawtop            ( true                          )
 
-                    :oc( function ( s )
-                        if s.action_close then return end
-                        s.action_close = true
-                        s:Stop( )
-                        s:MoveTo( pos_w, pos_m2, 0.5, 0, -1, function( )
-                            ui:destroy_visible( s )
+                        :oc( function ( s )
+                            if s.action_close then return end
+                            s.action_close = true
+                            s:Stop( )
+                            s:MoveTo( pos_w, pos_m2, 0.5, 0, -1, function( )
+                                ui:destroy_visible( s )
+                            end )
                         end )
-                    end )
 
-                    :draw( function( s, w, h )
-                        local pulse     = math.abs( math.sin( CurTime( ) * 2 ) * 255 )
-                        pulse           = math.Clamp( pulse, 125, 175 )
+                        :draw( function( s, w, h )
+                            local pulse     = math.abs( math.sin( CurTime( ) * 2 ) * 255 )
+                            pulse           = math.Clamp( pulse, 125, 175 )
 
-                        design.box( 3, 2, w - 6, h - 4, Color( 0, 0, 0, 200 ) )
-                        design.box( 4, 3, w - 8, h - 6, clr_bg )
-                        design.box( 4, 3, w - 8, h - 6, Color( 0, 0, 0, pulse ) )
-                    end )
+                            design.box( 3, 2, w - 6, h - 4, Color( 0, 0, 0, 200 ) )
+                            design.box( 4, 3, w - 8, h - 6, clr_box )
+                            design.box( 4, 3, w - 8, h - 6, Color( 0, 0, 0, pulse ) )
+                        end )
 
-                    :think( function( s )
-                        s:SetZPos( 5000 )
-                    end )
+                        :think( function( s )
+                            s:SetZPos( 5000 )
+                        end )
 
     /*
     *  notice sound
@@ -1410,7 +1389,7 @@ function design:notify( mtype, msg, duration, startpos, bFull )
         rlib.notify = obj
 
         obj:MoveTo( pos_w, pos_h, 0.5, 0, -1, function( )
-            obj:MoveTo( pos_w, pos_m2, 0.5, duration, -1, function( )
+            obj:MoveTo( pos_w, pos_m2, 0.5, dur, -1, function( )
                 ui:destroy_visible( obj )
             end )
         end )
@@ -1439,10 +1418,7 @@ function design.notify_adv( icon, title, message, delay )
     if not title then return end
     if not message then return end
 
-    local msg               = helper.str:crop( message, 300, pref( 'sys.dialog.msg' ) )
-    local text_w, text_h    = surface.GetTextSize( msg )
-    local timer_id          = prefix .. 'notice.timer'
-
+    local timer_id = prefix .. 'notice.timer'
     timex.expire( timer_id )
 
     /*
@@ -1553,10 +1529,10 @@ function design.notify_adv( icon, title, message, delay )
             end
 
             -- text
-            local clr_text = cfg.dialogs.clrs.primary_text
-            design.text( title, w / 2, h / 2 - 13, Color( clr_text.r, clr_text.g, clr_text.b, c_alpha ), pref( 'sys.dialog.title' ), 1, 1 )
-            design.text( message, w / 2, h / 2 + 17, Color( clr_text.r, clr_text.g, clr_text.b, c_alpha ), pref( 'sys.dialog.msg' ), 1, 1 )
-            design.text( lang( 'dialog_key_close', key_convert ), w / 2, h - h * .10 / 2 + 15, Color( clr_text.r, clr_text.g, clr_text.b, c_alpha ), pref( 'sys.dialog.qclose' ), 1, 1 )
+            local clr_txt = cfg.dialogs.clrs.primary_text
+            design.text( title, w / 2, h / 2 - 13, Color( clr_txt.r, clr_txt.g, clr_txt.b, c_alpha ), pref( 'sys_dialog_title' ), 1, 1 )
+            design.text( message, w / 2, h / 2 + 17, Color( clr_txt.r, clr_txt.g, clr_txt.b, c_alpha ), pref( 'sys_dialog_msg' ), 1, 1 )
+            design.text( lang( 'dialog_key_close', key_convert ), w / 2, h - h * .10 / 2 + 15, Color( clr_txt.r, clr_txt.g, clr_txt.b, c_alpha ), pref( 'sys_dialog_qclose' ), 1, 1 )
 
             local time          = math.Remap( CurTime( ) - m_ctime, 0, delay, w, 0 )
             local blk_w         = time * 0.20
@@ -1595,6 +1571,118 @@ function design.notify_adv( icon, title, message, delay )
 end
 
 /*
+*   design :: bubble
+*
+*   displays a simple bubble notification to the lower right
+*
+    @param  : str msg
+*   @param  : int dur
+*   @param  : clr clr_box
+*   @param  : clr clr_txt
+*/
+
+function design:bubble( msg, dur, clr_box, clr_txt )
+
+    /*
+    *   destroy existing
+    */
+
+    ui:destroy_visible( rlib.bubble )
+
+    /*
+    *   check
+    */
+
+    if not msg then return end
+
+    /*
+    *   message cropping and length
+    */
+
+    local message           = helper.str:crop( msg, ui:cscale( true, 210, 240, 250, 240, 250, 250, 260 ), pref( 'sys_bubble_msg' ) )
+    local text_w, text_h    = helper.str:len( message, pref( 'sys_bubble_msg' ) )
+
+    dur                     = isnumber( dur ) and dur or 8
+    clr_box                 = IsColor( clr_box ) and clr_box or Color( 20, 20, 20, 255 )
+    clr_txt                 = IsColor( clr_txt ) and clr_txt or Color( 255, 255, 255, 255 )
+
+    local pos_w, pos_h      = text_w + 155, 20 + text_h + 15
+    pos_w                   = math.Clamp( pos_w, 150, 330 )
+
+    /*
+    *   btn :: close
+    */
+    local mat_grad          = helper._mat[ 'grad_up' ]
+
+    local obj               = ui.new( 'btn'                         )
+    :bsetup                 (                                       )
+    :size                   ( pos_w, pos_h                          )
+    :pos                    ( ScrW( ) - pos_w - 5, ScrH( ) + pos_h  )
+    :textadv                ( clr_txt, pref( 'sys_bubble_msg' ), '' )
+    :drawtop                ( true                                  )
+
+                            :draw( function( s, w, h )
+                                design.rbox( 5, 0, 0, w, h, clr_box )
+
+                                surface.SetDrawColor( Color( 255, 255, 255, 2 ) )
+                                surface.DrawTexturedRectRotated( -74, 0, w, h * 6, 140 )
+
+                                draw.TexturedQuad { texture = surface.GetTextureID( mat_grad ), color = Color( 255, 255, 255, 1 ), x = 0, y = h * 0.10, w = w, h = h * 0.99 }
+                                draw.DrawText( message, pref( 'sys_bubble_msg' ), 65, ( h / 2 ) - ( text_h / 2 ), clr_txt , TEXT_ALIGN_LEFT )
+                            end )
+
+                            :oc( function ( s )
+                                if s.action_close then return end
+                                s.action_close = true
+                                s:Stop( )
+                                s:MoveTo( ScrW( ) - s:GetWide( ) - 5, ScrH( ) + s:GetTall( ) + 5, 0.5, 0, -1, function( )
+                                    ui:destroy_visible( s )
+                                end )
+                            end )
+
+    surface.SetFont( pref( 'sys_bubble_ico' ) )
+
+    local ico_w, ico_h      = surface.GetTextSize( utf8.char( 9873 ) )
+
+    local ico               = ui.new( 'btn', obj                )
+    :static                 ( LEFT                              )
+    :margin                 ( 7, 0, 0, 0                        )
+    :wide                   ( 50                                )
+    :notext                 (                                   )
+
+                            :draw( function( s, w, h )
+                                local doPulse       = math.abs( math.sin( CurTime( ) * 3 ) * 255 )
+                                doPulse			    = math.Clamp( doPulse, 30, 255 )
+
+                                draw.DrawText( utf8.char( 10070 ), pref( 'sys_bubble_ico' ), w / 2, ( obj:GetTall( ) / 2 ) - ( ico_h / 2 ) - 1, Color( 255, 255, 255, doPulse ) , TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                            end )
+
+                            :oc( function ( s )
+                                if obj.action_close then return end
+                                obj.action_close = true
+                                obj:Stop( )
+                                obj:MoveTo( ScrW( ) - obj:GetWide( ) - 5, ScrH( ) + obj:GetTall( ) + 5, 0.5, 0, -1, function( )
+                                    ui:destroy_visible( obj )
+                                end )
+                            end )
+
+    /*
+    *  display notice
+    */
+
+    if ui:valid( obj ) then
+        rlib.notify = obj
+
+        obj:MoveTo( ScrW( ) - obj:GetWide( ) - 5, ScrH( ) - obj:GetTall( ) - 5, 0.5, 0, -1, function( )
+            obj:MoveTo( ScrW( ) - obj:GetWide( ) - 5, ScrH( ) + obj:GetTall( ) + 5, 0.5, dur, -1, function( )
+                ui:destroy( obj )
+            end )
+        end )
+    end
+
+end
+
+/*
 *   design :: notify :: inform ( slider )
 *
 *   displays a notification that slides in from the right; shows for a set duration, and then
@@ -1605,10 +1693,10 @@ end
 *   @param  : int, str, tbl, clr mtype
 *   @param  : str msg
 *   @param  : str title
-*   @param  : int duration
+*   @param  : int dur
 */
 
-function design:inform( mtype, msg, title, duration )
+function design:inform( mtype, msg, title, dur )
 
     /*
     *   destroy existing
@@ -1620,15 +1708,15 @@ function design:inform( mtype, msg, title, duration )
     *   mtype colorization
     */
 
-    local clr_bg, clr_text = Color( 30, 30, 30, 255 ), Color( 255, 255, 255, 255 )
+    local clr_box, clr_txt = Color( 30, 30, 30, 255 ), Color( 255, 255, 255, 255 )
     if mtype and mtype ~= 'def' then
         if IsColor( mtype ) then
-            clr_bg      = mtype
+            clr_box     = mtype
         elseif isnumber( mtype ) then
-            clr_bg      = base._def.lc_rgb[ mtype ]
+            clr_box     = base._def.lc_rgb[ mtype ]
         elseif istable( mtype ) and not IsColor( mtype ) then
-            clr_bg      = mtype.clr_bg or Color( 30, 30, 30, 255 )
-            clr_text    = mtype.clr_text or Color( 255, 255, 255, 255 )
+            clr_box     = mtype.clr_box or Color( 30, 30, 30, 255 )
+            clr_txt     = mtype.clr_txt or Color( 255, 255, 255, 255 )
         end
     end
 
@@ -1637,15 +1725,14 @@ function design:inform( mtype, msg, title, duration )
     end
 
     title                   = isstring( title ) and title or lang( 'notify_title_def' )
-    duration                = isnumber( duration ) and duration or 10
+    dur                     = isnumber( dur ) and dur or 10
 
-    local message           = helper.str:crop( msg, ui:cscale( true, 220, 250, 260, 250, 260, 260, 270 ), pref( 'sys.dialog.slider.msg' ) )
-    local text_w, text_h    = helper.str:len( message, pref( 'sys.dialog.slider.msg' ) )
+    local message           = helper.str:crop( msg, ui:cscale( true, 220, 250, 260, 250, 260, 260, 270 ), pref( 'sys_dialog_slider_msg' ) )
+    local text_w, text_h    = helper.str:len( message, pref( 'sys_dialog_slider_msg' ) )
     local m_ctime           = CurTime( )
-    local val_max           = 300
 
-    local pos_w, pos_h      = text_w + 90, 50 + text_h + 15
-    pos_w                   = math.Clamp( pos_w, 230, val_max )
+    local pos_w, pos_h      = text_w + 120, 50 + text_h + 15
+    pos_w                   = math.Clamp( pos_w, 150, 300 )
 
     /*
     *   pnl :: parent
@@ -1654,6 +1741,7 @@ function design:inform( mtype, msg, title, duration )
     local obj               = ui.new( 'pnl'                 )
     :size                   ( pos_w, pos_h                  )
     :pos                    ( ScrW( ), 200                  )
+    :drawtop                ( true                          )
 
                             :draw( function( s, w, h )
                                 design.box( 0, 0, w, h, Color( 35, 35, 35, 255 ) )
@@ -1681,7 +1769,7 @@ function design:inform( mtype, msg, title, duration )
     :margin                 ( 0, 0, 6, 0                    )
 
                             :draw( function( s, w, h )
-                                draw.SimpleText( title, pref( 'sys.dialog.slider.title' ), w / 2 + 3, 30 / 2 + 1, Color( 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                draw.SimpleText( title, pref( 'sys_dialog_slider_title' ), w / 2 - 5, 30 / 2 + 1, Color( 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                             end )
 
     /*
@@ -1694,7 +1782,7 @@ function design:inform( mtype, msg, title, duration )
     :margin                 ( 5, 5, 5, 5                    )
     :size                   ( 21                            )
     :onhover                (                               )
-    :textadv                ( Color( 255, 255, 255, 255 ), pref( 'sys.dialog.slider.exit' ), helper.get:utf8( 'close' ) )
+    :textadv                ( Color( 255, 255, 255, 255 ), pref( 'sys_dialog_slider_exit' ), helper.get:utf8( 'close' ) )
 
                             :draw( function( s, w, h )
                                 if s.hover then
@@ -1734,7 +1822,7 @@ function design:inform( mtype, msg, title, duration )
     :align                  ( 5                             )
 
                             :draw( function( s, w, h )
-                                draw.DrawText( message, pref( 'sys.dialog.slider.msg' ), s:GetWide() / 2, 10, Color( 255, 255, 255, 255 ) , TEXT_ALIGN_CENTER )
+                                draw.DrawText( message, pref( 'sys_dialog_slider_msg' ), s:GetWide() / 2, 10, Color( 255, 255, 255, 255 ) , TEXT_ALIGN_CENTER )
                             end )
 
     /*
@@ -1747,7 +1835,7 @@ function design:inform( mtype, msg, title, duration )
     :tall                   ( 6                             )
 
                             :draw( function( s, w, h )
-                                local time          = math.Remap( CurTime( ) - m_ctime, 0, duration, w, 0 )
+                                local time          = math.Remap( CurTime( ) - m_ctime, 0, dur, w, 0 )
                                 local blk_w         = time * 1
                                 local blk_center    = w / 2 - ( blk_w / 2 )
                                 local clr_prog      = cfg.dialogs.clrs.progress
@@ -1769,7 +1857,7 @@ function design:inform( mtype, msg, title, duration )
         rlib.notify = obj
 
         obj:MoveTo( ScrW( ) - obj:GetWide( ) - 5, 200, 0.5, 0, -1, function( )
-            obj:MoveTo( ScrW( ), 200, 0.5, duration, -1, function( )
+            obj:MoveTo( ScrW( ), 200, 0.5, dur, -1, function( )
                 ui:destroy( obj )
             end )
         end )
@@ -1800,7 +1888,7 @@ function design.anim_scrolltext( text, uid, src, font, clr, dist, atime )
 
     uid     = uid or helper.new.id( 10 )
     src     = istable( src ) and src or { }
-    font    = font or pref( 'sys.draw.textscroll' )
+    font    = font or pref( 'sys_draw_textscroll' )
     clr     = IsColor( clr ) and clr or Color( 255, 255, 255, 255 )
     dist    = isnumber( dist ) and dist or 0.5
     atime   = isnumber( atime ) and atime or 2
@@ -1860,14 +1948,14 @@ end
 *
 *   @param  : str msg
 *   @param  : clr clr
-*   @param  : int duration
+*   @param  : int dur
 *   @param  : int fade
 */
 
-function design.rsay( msg, clr, duration, fade )
+function design.rsay( msg, clr, dur, fade )
     msg         = msg or 'missing msg'
     clr         = clr or Color( 255, 255, 255, 255 )
-    duration    = duration or 10
+    dur         = dur or 10
     fade        = fade or 0.5
 
     local msg_table     = istable( msg ) and true or false
@@ -1877,7 +1965,7 @@ function design.rsay( msg, clr, duration, fade )
         local alpha = 255
         local dtime = CurTime( ) - start
 
-        if dtime > duration then
+        if dtime > dur then
             hook.Remove( 'HUDPaint', prefix .. 'rsay.draw' )
             return
         end
@@ -1888,17 +1976,17 @@ function design.rsay( msg, clr, duration, fade )
             alpha = alpha * 255
         end
 
-        if duration - dtime < fade then
-            alpha = ( duration - dtime ) / fade
+        if dur - dtime < fade then
+            alpha = ( dur - dtime ) / fade
             alpha = alpha * 255
         end
         clr.a  = alpha
 
         if not msg_table then
-            design.text( msg, ScrW( ) * 0.5, ScrH( ) * 0.25, clr, pref( 'sys.rsay.text' ), 1 )
+            design.text( msg, ScrW( ) * 0.5, ScrH( ) * 0.25, clr, pref( 'sys_rsay_text' ), 1 )
         else
-            design.text( msg[ 1 ], ScrW( ) * 0.5, ScrH( ) * 0.25 - 15, clr, pref( 'sys.rsay.text' ), 1 )
-            design.text( msg[ 2 ], ScrW( ) * 0.5, ScrH( ) * 0.25 + 15, clr, pref( 'sys.rsay.text.sub' ), 1 )
+            design.text( msg[ 1 ], ScrW( ) * 0.5, ScrH( ) * 0.25 - 15, clr, pref( 'sys_rsay_text' ), 1 )
+            design.text( msg[ 2 ], ScrW( ) * 0.5, ScrH( ) * 0.25 + 15, clr, pref( 'sys_rsay_text_sub' ), 1 )
         end
     end
 

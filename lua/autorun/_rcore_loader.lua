@@ -410,7 +410,7 @@ function rcore.autoload:Run( )
     *   hook :: rcore post loader
     */
 
-    hook.Run( prefix .. 'loader.post' )
+    rhook.run.rlib( 'rcore_loader_post' )
 
 end
 

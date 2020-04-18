@@ -23,36 +23,18 @@
 
 rcore                   = rcore or { }
 local base              = rcore
-local prefix            = base.manifest.prefix
+local pf                = base.manifest.prefix
 
 /*
 *   Localized rlib routes
 *
-*   : base.h          = helpers
-*   : base.d          = draw/design
-*   : base.c          = calls
-*   : base.p          = panels
-*   : base.i          = interface
-*   : base.s          = storage
+*   : base.h            = helpers
+*   : base.a            = access
 */
 
 local helper            = rlib.h
 local access            = rlib.a
 local design            = rlib.d
-local ui                = rlib.i
-local mats              = rlib.m
-
-/*
-*   Localized cmd func
-*
-*   @source : lua\autorun\libs\_calls
-*   @param  : str type
-*   @param  : varg { ... }
-*/
-
-local function call( t, ... )
-    return rlib:call( t, ... )
-end
 
 /*
 *   Localized translation func
@@ -63,64 +45,39 @@ local function lang( ... )
 end
 
 /*
-*   Localized res func
-*/
-
-local function resources( t, ... )
-    return rlib:resource( mod, t, ... )
-end
-
-/*
-*	localized mat func
-*/
-
-local function mat( id )
-    return mats:call( mod, id )
-end
-
-/*
-*	prefix ids
-*/
-
-local function pref( str, suffix )
-    local state = not suffix and mod or isstring( suffix ) and suffix or false
-    return rlib.get:pref( str, state )
-end
-
-/*
-*   netlib :: chatmsg
+*   netlib :: sms :: umsg
 *
 *   sends a message directly to the ply chat
 */
 
-local function netlib_chatmsg( len, ply )
+local function netlib_sms_umsg( len, pl )
     local msg = net.ReadTable( )
     if not msg then return end
     chat.AddText( unpack( msg ) )
 end
-net.Receive( 'rlib.chat.msg', netlib_chatmsg )
+net.Receive( 'rlib.sms.umsg', netlib_sms_umsg )
 
 /*
-*   netlib :: chatconsole
+*   netlib :: sms :: konsole
 *
 *   sends a message directly to the ply console
 */
 
-local function netlib_chatconsole( len, ply )
+local function netlib_sms_konsole( len, pl )
     local msg = net.ReadTable( )
     if not msg then return end
     table.insert( msg, '\n' )
     MsgC( Color( 255, 255, 255 ), unpack( msg ) )
 end
-net.Receive( 'rlib.chat.console', netlib_chatconsole )
+net.Receive( 'rlib.sms.konsole', netlib_sms_konsole )
 
 /*
-*   netlib :: notify
+*   netlib :: sms :: notify
 *
 *   sends a standard notification directly to the ply screen
 */
 
-local function netlib_notify( len, ply )
+local function netlib_sms_notify( len, pl )
     local args  = net.ReadTable( )
     local cat   = args and args[ 1 ] or 1
     local msg   = args and args[ 2 ] or ''
@@ -130,16 +87,16 @@ local function netlib_notify( len, ply )
 
     design:notify( cat, msg, dur, pos, bFull )
 end
-net.Receive( 'rlib.notify', netlib_notify )
+net.Receive( 'rlib.sms.notify', netlib_sms_notify )
 
 /*
-*   netlib :: inform
+*   netlib :: inform :: bc
 *
 *   sends a slider notification directly to the ply screen
 *   slides in from the right side.
 */
 
-local function netlib_inform( len, ply )
+local function netlib_sms_inform( len, pl )
     local args  = net.ReadTable( )
     local cat   = args and args[ 1 ] or 1
     local msg   = args and args[ 2 ] or ''
@@ -148,7 +105,25 @@ local function netlib_inform( len, ply )
 
     design:inform( cat, msg, title, dur )
 end
-net.Receive( 'rlib.notify.slider', netlib_inform )
+net.Receive( 'rlib.sms.inform', netlib_sms_inform )
+
+/*
+*   netlib :: bubble :: bc
+*
+*   sends a bubble msg that displays to the bottom right of the
+*   players screen
+*/
+
+local function netlib_sms_bubble( len, pl )
+    local args      = net.ReadTable( )
+    local msg       = args and args[ 1 ] or ''
+    local dur       = args and isnumber( args[ 2 ] ) and args[ 2 ] or nil
+    local clr_box   = args and IsColor( args[ 3 ] ) and args[ 3 ] or nil
+    local clr_txt   = args and IsColor( args[ 4 ] ) and args[ 4 ] or nil
+
+    design:bubble( msg, dur, clr_box, clr_txt )
+end
+net.Receive( 'rlib.sms.bubble', netlib_sms_bubble )
 
 /*
 *   get material data
@@ -183,12 +158,9 @@ function base:mats_get( src, mod )
 
     suffix = suffix and suffix:lower( )
 
-    local mat = 'm_' .. src
-    if suffix then
-        mat = 'm_' .. suffix .. '_' .. src
-    end
+    local mat_ref = ( not suffix and 'm_' .. src ) or ( 'm_' .. suffix .. '_' .. src )
 
-    return rlib.m[ mat ] or mat or ''
+    return rlib.m[ mat_ref ] or mat_ref or ''
 end
 
 /*
@@ -202,38 +174,38 @@ end
 *   @ex     : rlib.m:get( 'btn_menu_steam', mod )
 *           : rlib.m:get( 'btn_menu_steam', 'mod_str' )
 *
-*   @param  : tbl, str mod
+*   @param  : tbl, str modsrc
 *   @param  : bool bString
 *   @return : tbl, str
 */
 
-function base:mats_index( mod, bPath )
+function base:mats_index( modsrc, bPath )
     local suffix = ''
-    if mod then
-        if isstring( mod ) and self.modules[ mod ] and self.modules[ mod ].id then
-            suffix = self.modules[ mod ].id
-        elseif istable( mod ) and mod.id then
-            suffix = mod.id
+    if modsrc then
+        if isstring( modsrc ) and self.modules[ modsrc ] and self.modules[ modsrc ].id then
+            suffix = self.modules[ modsrc ].id
+        elseif istable( modsrc ) and modsrc.id then
+            suffix = modsrc.id
         end
     end
 
-    if isstring( mod ) and not suffix or suffix == '' then
-        suffix = mod
+    if isstring( modsrc ) and not suffix or suffix == '' then
+        suffix = modsrc
     end
 
-    suffix = suffix and string.lower( suffix )
+    suffix = suffix and suffix:lower( )
 
-    if not mod then
+    if not modsrc then
         return rlib.m
     end
 
-    local mat = 'm_' .. suffix .. '_'
+    local mat_ref = 'm_' .. suffix .. '_'
 
     local resp, cnt = { }, 0
     for k, v in pairs( rlib.m ) do
-        if ( string.find( k, mat, 1, true ) ~= nil ) then
+        if ( string.find( k, mat_ref, 1, true ) ~= nil ) then
             local id    = k
-            id          = id:gsub( mat, '' )
+            id          = id:gsub( mat_ref, '' )
             resp[ id ]  = bPath and k.path or v
             cnt         = cnt + 1
         end
@@ -265,4 +237,4 @@ function base:modules_perms_register( source )
         access:initialize( v.permissions )
     end
 end
-hook.Add( 'PostGamemodeLoaded', prefix .. 'modules.permissions.register', function( source ) base:modules_perms_register( source ) end )
+rhook.new.gmod( 'PostGamemodeLoaded', 'rcore_modules_perms_register', function( source ) base:modules_perms_register( source ) end )

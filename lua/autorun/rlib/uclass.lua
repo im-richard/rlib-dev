@@ -1,11 +1,10 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
-*   @file           uclass.lua
+*   @package        : rlib
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -27,6 +26,12 @@ local prefix                = mf.prefix
 local cfg                   = base.settings
 
 /*
+*   simplifiy funcs
+*/
+
+local function log( ... ) base:log( ... ) end
+
+/*
 *   Localized rlib routes
 */
 
@@ -34,11 +39,7 @@ local helper                = base.h
 local design                = base.d
 local ui                    = base.i
 local mats                  = base.m
-local utils                 = base.u
-local access                = base.a
-local tools                 = base.t
-local konsole               = base.k
-local sys                   = base.sys
+local cvar                  = base.v
 
 /*
 *   Localized lua funcs
@@ -47,31 +48,21 @@ local sys                   = base.sys
 */
 
 local pairs                 = pairs
-local ipairs                = ipairs
-local SortedPairs           = SortedPairs
 local type                  = type
-local error                 = error
-local print                 = print
-local GetConVar             = GetConVar
-local tonumber              = tonumber
 local tostring              = tostring
 local IsValid               = IsValid
 local istable               = istable
 local isfunction            = isfunction
-local isentity              = isentity
 local isnumber              = isnumber
 local IsColor               = IsColor
 local Color                 = Color
-local Material              = Material
 local ScreenScale           = ScreenScale
 local gui                   = gui
 local vgui                  = vgui
 local table                 = table
-local player                = player
 local math                  = math
 local surface               = surface
 local draw                  = draw
-local render                = render
 local string                = string
 local sf                    = string.format
 
@@ -186,6 +177,7 @@ helper._vgui =
     [ 'scrollpnl' ]             = 'DScrollPanel',
     [ 'spanel' ]                = 'DScrollPanel',
     [ 'spnl' ]                  = 'DScrollPanel',
+    [ 'dsp' ]                   = 'DScrollPanel',
     [ 'sgrip' ]                 = 'DScrollBarGrip',
     [ 'grip' ]                  = 'DScrollBarGrip',
     [ 'autosize' ]              = 'DSizeToContents',
@@ -307,6 +299,14 @@ function ui.element( class )
 end
 
 /*
+*   ui :: getscale
+*/
+
+function ui:GetScale( )
+    return math.Clamp( ScrH( ) / 1080, 0.75, 1 )
+end
+
+/*
 *   ui :: scale
 *
 *   standard scaling
@@ -320,7 +320,7 @@ function ui:scale( iclamp )
 end
 
 /*
-*   ui :: screenscale
+*   ui :: Scale640
 *
 *   works similar to glua ScreenScale( )
 *
@@ -329,7 +329,7 @@ end
 *   @return : int
 */
 
-function ui:screenscale( val, iMax )
+function ui:Scale640( val, iMax )
     iMax = isnumber( iMax ) and iMax or ScrW( )
     return val * ( iMax / 640.0 )
 end
@@ -363,11 +363,11 @@ end
 
 function ui:cscale( bSimple, i800, i1024, i1280, i1366, i1600, i1920, i2xxx )
     if not isbool( bSimple ) then
-        base:log( 2, 'func [%s]: bSimple not bool', debug.getinfo( 1, 'n' ).name )
+        log( 2, 'func [ %s ]: bSimple not bool', debug.getinfo( 1, 'n' ).name )
     end
 
     if not i800 then
-        base:log( 2, 'func [%s]: no scale int specified', debug.getinfo( 1, 'n' ).name )
+        log( 2, 'func [ %s ]: no scale int specified', debug.getinfo( 1, 'n' ).name )
     end
 
     if not i1024 then i1024, i1280, i1366, i1600, i1920, i2xxx = i800, i800, i800, i800, i800, i800 end
@@ -390,12 +390,12 @@ function ui:cscale( bSimple, i800, i1024, i1280, i1366, i1600, i1920, i2xxx )
     elseif ScrW( ) > 1600 and ScrW( ) <= 1920 then
         return bSimple and i1920 or ScreenScale( i1920 )
     elseif ScrW( ) > 1920 then
-        return bSimple and i2xxx or self:screenscale( i1920, 1920 )
+        return bSimple and i2xxx or self:Scale640( i1920, 1920 )
     end
 end
 
 /*
-*   ui :: controlled scale :: strict
+*   ui :: smartscale :: strict
 *
 *   a more controlled solution to screen scaling because I dislike how doing simple ScreenScaling never 
 *   makes things perfect.
@@ -421,13 +421,13 @@ end
 *   @return : int
 */
 
-function ui:cscale_strict( bSimple, i800, i1024, i1280, i1366, i1600, i1920, i2560 )
+function ui:SmartScale_Strict( bSimple, i800, i1024, i1280, i1366, i1600, i1920, i2560 )
     if not isbool( bSimple ) then
-        base:log( 2, 'func [%s]: bSimple not bool', debug.getinfo( 1, 'n' ).name )
+        log( 2, 'func [ %s ]: bSimple not bool', debug.getinfo( 1, 'n' ).name )
     end
 
     if not i800 then
-        base:log( 2, 'func [%s]: no scale int specified', debug.getinfo( 1, 'n' ).name )
+        log( 2, 'func [ %s ]: no scale int specified', debug.getinfo( 1, 'n' ).name )
     end
 
     if not i1024 then i1024, i1280, i1366, i1600, i1920, i2560 = i800, i800, i800, i800, i800, i800 end
@@ -450,27 +450,27 @@ function ui:cscale_strict( bSimple, i800, i1024, i1280, i1366, i1600, i1920, i25
     elseif ScrW( ) > 1600 and ScrW( ) <= 1920 then
         return bSimple and i1920 or ScreenScale( i1920 )
     elseif ScrW( ) > 1920 then
-        return bSimple and i2560 or self:screenscale( i2560, 2560 )
+        return bSimple and i2560 or self:Scale640( i2560, 2560 )
     end
 end
 
 /*
-*   ui :: limit scale
+*   ui :: clamp scale
 *
-*   clamp a width and height value
+*   scale utilizing a clamped w and h value
 *
 *   @param  : int w
 *   @param  : int h
 *   @return : int w, h
 */
 
-function ui:lscale( w, h )
+function ui:ClampScale( w, h )
     h = isnumber( h ) and h or w
     return math.Clamp( 1920, 0, ScrW( ) / w ), math.Clamp( 1080, 0, ScrH( ) / h )
 end
 
 /*
-*   ui :: scale :: width
+*   ui :: clamp scale :: width
 *
 *   clamp a width value
 *
@@ -480,13 +480,13 @@ end
 *   @return : int
 */
 
-function ui:scale_w( w, min, max )
+function ui:ClampScale_w( w, min, max )
     w = isnumber( w ) and w or ScrW( )
     return math.Clamp( ScreenScale( w ), min or 0, max or ScreenScale( w ) )
 end
 
 /*
-*   ui :: scale :: height
+*   ui :: clamp scale :: height
 *
 *   clamp a height value
 *
@@ -496,7 +496,7 @@ end
 *   @return : int
 */
 
-function ui:scale_h( h, min, max )
+function ui:ClampScale_h( h, min, max )
     h = isnumber( h ) and h or ScrH( )
     return math.Clamp( ScreenScale( h ), min or 0, max or ScreenScale( h ) )
 end
@@ -505,6 +505,8 @@ end
 *   ui :: basic scale
 *
 *   basic scaling control
+*
+*   @note   : deprecated in future
 *
 *   @param  : int s
 *   @param  : int m
@@ -531,6 +533,8 @@ end
 *   ui :: scalesimple
 *
 *   simple scaling
+*
+*   @note   : deprecated in future
 *
 *   @param  : int s
 *   @param  : int m
@@ -572,30 +576,6 @@ function ui:setscale( w, h )
     local ui_w, ui_h        = sc_w * pnl_w, sc_h * pnl_h
 
     return ui_w, ui_h
-end
-
-/*
-*   ui :: get_padding
-*
-*   return current padding
-*
-*   @return : int
-*/
-
-function ui:getpadding( val )
-    return val or 0
-end
-
-/*
-*   ui :: get_margin
-*
-*   return current margin
-*
-*   @return : int
-*/
-
-function ui:getmargin( val )
-    return val or 0
 end
 
 /*
@@ -822,7 +802,7 @@ end
 *   @param  : int y
 */
 
-function ui:setpos( pnl, x, y )
+function ui:pos( pnl, x, y )
     x = x or 0
     y = y or 0
     if self:valid( pnl ) and self:visible( pnl ) then
@@ -850,7 +830,7 @@ function ui:movecenter( w, h, time )
 end
 
 /*
-*   ui :: setpos center
+*   ui :: pos :: center
 *
 *   animation to move panel to center
 *
@@ -862,7 +842,7 @@ end
 *   @param  : str, int from :: [optional] :: default left
 */
 
-function ui:setpos_center( pnl, time, from )
+function ui:pos_center( pnl, time, from )
     if not self:valid( pnl ) then return end
     local w, h = pnl:GetSize( )
 
@@ -887,6 +867,29 @@ function ui:setpos_center( pnl, time, from )
 
     pnl:SetPos( init_w, init_h )
     pnl:MoveTo( move_w, move_h, time, 0, -1 )
+end
+
+/*
+*   ui :: pos :: anim
+*
+*   forces a pnl to center screen based on animation settings
+*
+*   @param  : pnl pnl
+*   @param  : int time
+*   @param  : str, int from :: [optional] :: default left
+*/
+
+function ui:pos_anim( pnl, time, from )
+    if not self:visible( pnl ) then return end
+
+    time = isnumber( time ) and time or 0.4
+    from = isnumber( from ) and from or 4
+
+    if cvar:GetBool( 'rlib_animations_enabled' ) then
+        self:pos_center( pnl, time, from )
+    else
+        self:pos_center( pnl )
+    end
 end
 
 /*
@@ -925,7 +928,7 @@ end
 
 function ui:register( id, mod, panel, desc )
     if not helper.str:valid( id ) then
-        base:log( 2, lang( 'inf_reg_id_invalid' ) )
+        log( 2, lang( 'inf_reg_id_invalid' ) )
         return false
     end
 
@@ -941,7 +944,7 @@ function ui:register( id, mod, panel, desc )
             pnl     = panel,
             desc    = desc or lang( 'none' )
         }
-        base:log( 6, lang( 'inf_registered', id ) )
+        log( 6, lang( 'inf_registered', id ) )
     end
 end
 
@@ -961,14 +964,14 @@ end
 
 function ui:load( id, mod )
     if not helper.str:valid( id ) then
-        base:log( 2, lang( 'inf_load_id_invalid' ) )
+        log( 2, lang( 'inf_load_id_invalid' ) )
         return false
     end
 
     mod = ( isstring( mod ) and mod ) or ( istable( mod ) and mod.id ) or prefix
 
     if not istable( base.p ) then
-        base:log( 2, lang( 'inf_load_tbl_invalid' ) )
+        log( 2, lang( 'inf_load_tbl_invalid' ) )
         return false
     end
 
@@ -994,14 +997,14 @@ end
 
 function ui:call( id, mod )
     if not helper.str:valid( id ) then
-        base:log( 2, lang( 'inf_load_id_invalid' ) )
+        log( 2, lang( 'inf_load_id_invalid' ) )
         return false
     end
 
     mod = ( isstring( mod ) and mod ) or ( istable( mod ) and mod.id ) or prefix
 
     if not istable( base.p ) then
-        base:log( 2, lang( 'inf_load_tbl_invalid' ) )
+        log( 2, lang( 'inf_load_tbl_invalid' ) )
         return false
     end
 
@@ -1022,14 +1025,14 @@ end
 
 function ui:unregister( id, mod )
     if not helper.str:valid( id ) then
-        base:log( 2, lang( 'inf_unreg_id_invalid' ) )
+        log( 2, lang( 'inf_unreg_id_invalid' ) )
         return false
     end
 
     mod = isstring( mod ) and mod or prefix
 
     if not istable( base.p ) then
-        base:log( 2, lang( 'inf_unreg_tbl_invalid' ) )
+        log( 2, lang( 'inf_unreg_tbl_invalid' ) )
         return false
     end
 
@@ -1037,7 +1040,7 @@ function ui:unregister( id, mod )
 
     if base.p[ mod ] and base.p[ mod ][ id ] then
         base.p[ mod ][ id ] = nil
-        base:log( 6, lang( 'inf_unregister', id ) )
+        log( 6, lang( 'inf_unregister', id ) )
     end
 end
 
@@ -1103,7 +1106,7 @@ end
 
 function ui:dispatch( id, mod )
     if not helper.str:valid( id ) then
-        base:log( 2, lang( 'inf_load_id_invalid' ) )
+        log( 2, lang( 'inf_load_id_invalid' ) )
         return
     end
 
@@ -1127,7 +1130,7 @@ end
 
 function ui:stage( id, mod )
     if not helper.str:valid( id ) then
-        base:log( 2, lang( 'inf_load_id_invalid' ) )
+        log( 2, lang( 'inf_load_id_invalid' ) )
         return
     end
 
@@ -1150,7 +1153,7 @@ end
 
 function ui:unstage( id, mod )
     if not helper.str:valid( id ) then
-        base:log( 2, lang( 'inf_load_id_invalid' ) )
+        log( 2, lang( 'inf_load_id_invalid' ) )
         return
     end
 
@@ -1172,7 +1175,7 @@ end
 
 function ui:fonts_register( suffix, font, scale )
     suffix  = isstring( suffix ) and suffix or prefix
-    font    = isstring( font ) and font or pid( 'sys.entry.default' )
+    font    = isstring( font ) and font or pid( 'sys_entry_default' )
     scale   = isnumber( scale ) and scale or self:scale( )
 
     local char_last = string.sub( suffix, -1 )
@@ -1310,6 +1313,9 @@ function ui:getsvg( src, bShow )
     ]]
 end
 
+ui.OnHover = function( s ) return s:IsHovered( ) end
+ui.OnHoverChild = function( s ) return s:IsHovered( ) or s:IsChildHovered( ) end
+
 /*
 *   ui classes
 *
@@ -1418,12 +1424,12 @@ local uclass = { }
     /*
     *   ui :: class :: Panel :: SetConVar
     *
-    *   @param  : str cvar
+    *   @param  : str id
     */
 
-    function uclass.convar( pnl, cvar )
-        cvar = isstring( cvar ) and cvar or ''
-        pnl:SetConVar( cvar )
+    function uclass.convar( pnl, id )
+        id = isstring( id ) and id or ''
+        pnl:SetConVar( id )
     end
 
     /*
@@ -1570,7 +1576,7 @@ local uclass = { }
     /*
     *   ui :: class :: paint :: entry
     *
-    *   @alias  : paintentry, drawentry, pe
+    *   @alias  : paintentry, drawentry
     *
     *   @param  : clr clr_text
     *   @param  : clr clr_cur
@@ -1590,12 +1596,11 @@ local uclass = { }
         end
     end
     uclass.drawentry  = uclass.paintentry
-    uclass.pe         = uclass.paintentry
 
     /*
     *   ui :: class :: paint :: rounded box
     *
-    *   @alias  : paintrbox, drawrbox, rbox, prb
+    *   @alias  : paintrbox, drawrbox, rbox
     *
     *   @param  : clr clr
     *   @param  : int x
@@ -1623,7 +1628,6 @@ local uclass = { }
     end
     uclass.drawrbox   = uclass.paintrbox
     uclass.rbox       = uclass.paintrbox
-    uclass.prb        = uclass.paintrbox
 
     /*
     *   ui :: class :: debug :: where
@@ -1730,6 +1734,32 @@ local uclass = { }
         end
     end
     uclass.ocrv       = uclass.onclick_rv
+
+    /*
+    *   ui :: class :: onclick :: fade out
+    *
+    *   @alias  : onclick_fadeout, ocfo
+    *
+    *   @param  : pnl panel
+    *   @param  : int delay
+    *   @param  : bool bHide
+    */
+
+    function uclass.onclick_fadeout( pnl, panel, delay, bHide )
+        pnl[ 'DoClick' ] = function( s, ... )
+            if not ui:valid( panel ) then return end
+            delay   = isnumber( delay ) and delay or 1
+
+            panel:AlphaTo( 0, delay, 0, function( )
+                if bHide then
+                    ui:hide( panel )
+                else
+                    ui:destroy( panel )
+                end
+            end )
+        end
+    end
+    uclass.ocfo = uclass.onclick_fadeout
 
     /*
     *   ui :: class :: onremove
@@ -1908,8 +1938,9 @@ local uclass = { }
             fn( s, ... )
         end
     end
-    uclass.ogfo       = uclass.ongetfocus
-    uclass.getfocus   = uclass.ongetfocus
+    uclass.ogfo         = uclass.ongetfocus
+    uclass.getfocus     = uclass.ongetfocus
+    uclass.ogfocus      = uclass.ongetfocus
 
     /*
     *   ui :: class :: DNum :: OnValueChanged
@@ -2618,6 +2649,22 @@ local uclass = { }
     end
 
     /*
+    *   ui :: class :: DTextEntry :: AllowInput
+    *
+    *   @param  : func fn
+    */
+
+    function uclass.allowinput( pnl, fn )
+        local name = 'AllowInput'
+        local orig = pnl[ name ]
+
+        pnl[ name ] = function( s, ... )
+            if isfunction( orig ) then orig( s, ... ) end
+            fn( s, ... )
+        end
+    end
+
+    /*
     *   ui :: class :: DProgress :: SetFraction
     *
     *   @param  : int i
@@ -2636,7 +2683,7 @@ local uclass = { }
     */
 
     function uclass.setfont( pnl, str )
-        str = isstring( str ) and str or pid( 'sys.entry.default' )
+        str = isstring( str ) and str or pid( 'sys_entry_default' )
         pnl:SetFont( str )
     end
     uclass.font = uclass.setfont
@@ -3026,7 +3073,7 @@ local uclass = { }
     function uclass.txt( pnl, text, clr, font, bautosz, align )
         text    = isstring( text ) and text or ''
         clr     = IsColor( clr ) and clr or Color( 255, 255, 255, 255 )
-        font    = isstring( font ) and font or pid( 'sys.entry.default' )
+        font    = isstring( font ) and font or pid( 'sys_entry_default' )
 
         pnl:SetTextColor( clr )
         pnl:SetFont( font )
@@ -3065,7 +3112,7 @@ local uclass = { }
 
     function uclass.textadv( pnl, clr, font, text, bautosz )
         clr     = IsColor( clr ) and clr or Color( 255, 255, 255, 255 )
-        font    = isstring( font ) and font or pid( 'sys.entry.default' )
+        font    = isstring( font ) and font or pid( 'sys_entry_default' )
         text    = isstring( text ) and text or ''
 
         pnl:SetTextColor( clr )
@@ -3104,7 +3151,7 @@ local uclass = { }
     function uclass.label( pnl, text, clr, font, bautosz, align )
         text        = isstring( text ) and text or ''
         clr         = IsColor( clr ) and clr or Color( 255, 255, 255, 255 )
-        font        = isstring( font ) and font or pid( 'sys.entry.default' )
+        font        = isstring( font ) and font or pid( 'sys_entry_default' )
         bautosz     = bautosz or false
         align       = isnumber( align ) and align or 4
 
@@ -3388,6 +3435,17 @@ local uclass = { }
     end
 
     /*
+    *   ui :: class :: DTextEntry :: SetUpdateOnType
+    *
+    *   sets whether we should fire DTextEntry:OnValueChange 
+    *   every time we type or delete a character or only when Enter is pressed.
+    */
+
+    function uclass.setautoupdate( pnl, b )
+        pnl:SetUpdateOnType( b or false )
+    end
+
+    /*
     *   ui :: class :: Panel :: SetAllowNonAsciiCharacters
     *
     *   configures a text input to allow user to type characters that are not included in 
@@ -3608,11 +3666,24 @@ local uclass = { }
     *   ui :: class :: Panel :: MakePopup
     *
     *   focuses the panel and enables it to receive input.
-    *   automatically calls Panel:SetMouseInputEnabled and Panel:SetKeyboardInputEnabled and sets them to true.
+    *   automatically calls Panel:SetMouseInputEnabled and Panel:SetKeyboardInputEnabled 
+    *   and sets them to true.
+    *
+    *   :   bKeyDisabled
+    *       set TRUE to disable keyboard input
+    *
+    *   :   bMouseDisabled
+    *       set TRUE to disable mouse input
     */
 
-    function uclass.popup( pnl )
+    function uclass.popup( pnl, bKeyDisabled, bMouseDisabled )
         pnl:MakePopup( )
+        if bKeyDisabled then
+            pnl:SetKeyboardInputEnabled( false )
+        end
+        if bMouseDisabled then
+            pnl:SetMouseInputEnabled( false )
+        end
     end
 
     /*
@@ -4239,7 +4310,7 @@ local uclass = { }
             *   set / get font text size
             */
 
-            surface.SetFont( pid( 'sys.tippy.text' ) )
+            surface.SetFont( pid( 'sys_tippy_text' ) )
             local sz_w, sz_h    = surface.GetTextSize( str )
             sz_w                = sz_w + 50
 
@@ -4284,7 +4355,7 @@ local uclass = { }
                                 :draw( function( s, w, h )
                                     design.rbox( 4, 0, 0, sz_w, 25, clr_out )
                                     design.rbox( 4, 1, 1, sz_w - 2, 25 - 2, clr_box )
-                                    draw.SimpleText( string.format( '%s %s' , helper.get:utf8char( cfg.tips.clrs.utf ), str ), pid( 'sys.tippy.text' ), 15, ( 25 / 2 ), clr_text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( sf( '%s %s' , helper.get:utf8char( cfg.tips.clrs.utf ), str ), pid( 'sys_tippy_text' ), 15, ( 25 / 2 ), clr_text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                 end )
 
         end
@@ -4569,7 +4640,97 @@ local uclass = { }
     end
 
     /*
-    *   ui :: class :: fx :: onclick circle
+    *   ui :: class :: anim :: hover :: fill
+    *
+    *   animation causes box to slide in from the specified direction
+    *
+    *   @ex     :anim_hover_fill( Color( 255, 255, 255, 255 ), LEFT, 10 )
+    *
+    *   @param  : clr clr
+    *   @param  : int, enum dir
+    *   @param  : int sp
+    *   @param  : bool bDrawRepl
+    */
+
+    function uclass.anim_hover_fill( pnl, clr, dir, sp, bDrawRepl )
+        clr         = IsColor( clr ) and clr or Color( 5, 5, 5, 200 )
+        dir         = dir or LEFT
+        sp          = isnumber( sp ) and sp or 10
+        mat         = isbool( mat )
+
+        pnl:SetupAnim( 'OnHoverFill', sp, ui.OnHover )
+
+        local function draw_action( s, w, h )
+            local x, y, fw, fh
+            if dir == LEFT then
+                x, y, fw, fh    = 0, 0, math.Round( w * s.OnHoverFill ), h
+            elseif dir == TOP then
+                x, y, fw, fh    = 0, 0, w, math.Round( h * s.OnHoverFill )
+            elseif dir == RIGHT then
+                local prog      = math.Round( w * s.OnHoverFill )
+                x, y, fw, fh    = w - prog, 0, prog, h
+            elseif dir == BOTTOM then
+                local prog      = math.Round( h * s.OnHoverFill )
+                x, y, fw, fh    = 0, h - prog, w, prog
+            end
+
+            design.box( x, y, fw, fh, clr )
+        end
+
+        if not bDrawRepl then
+            pnl:drawover( function( s, w, h )
+                draw_action( s, w, h )
+            end )
+        else
+            pnl:draw( function( s, w, h )
+                draw_action( s, w, h )
+            end )
+        end
+
+    end
+
+    /*
+    *   ui :: class :: anim :: hover :: fade
+    *
+    *   displays a fade animation on hover
+    *
+    *   @ex     :anim_hover_fade( Color( 255, 255, 255, 255 ), 5, 0, false )
+    *
+    *   @param  : clr clr
+    *   @param  : int sp
+    *   @param  : int r
+    *   @param  : bool bDrawRepl
+    */
+
+    function uclass.anim_hover_fade( pnl, clr, sp, r, bDrawRepl )
+        clr         = IsColor( clr ) and clr or Color( 5, 5, 5, 200 )
+        sp          = isnumber( sp ) and sp or 10
+
+        pnl:SetupAnim( 'OnHoverFade', sp, ui.OnHover )
+
+        local function draw_action( s, w, h )
+            local da = ColorAlpha( clr, clr.a * s.OnHoverFade )
+
+            if r and r > 0 then
+                design.rbox( r, 0, 0, w, h, da )
+            else
+                design.box( 0, 0, w, h, da )
+            end
+        end
+
+        if not bDrawRepl then
+            pnl:drawover( function( s, w, h )
+                draw_action( s, w, h )
+            end )
+        else
+            pnl:draw( function( s, w, h )
+                draw_action( s, w, h )
+            end )
+        end
+    end
+
+    /*
+    *   ui :: class :: anim :: onclick circle
     *
     *   creates a simple onclick animation with a poly expanding outward while becoming transparent
     *   based on mouse position
@@ -4606,10 +4767,9 @@ local uclass = { }
             cir.a                   = clr.a
         end )
     end
-    uclass.anim_cir = uclass.anim_click_circle
 
     /*
-    *   ui :: class :: fx :: onclick circle
+    *   ui :: class :: anim :: onclick outline
     *
     *   creates a simple onclick animation with a poly expanding outward while becoming transparent
     *   based on mouse position
@@ -4647,10 +4807,9 @@ local uclass = { }
             cir.a                   = clr.a
         end )
     end
-    uclass.anim_cir_ol = uclass.anim_click_ol
 
     /*
-    *   ui :: class :: fx :: anim :: fade light
+    *   ui :: class :: anim :: fade light
     *
     *   animates a pnl by setting pnl opacity to X with fade effect
     *
@@ -4669,7 +4828,7 @@ local uclass = { }
     uclass.anim_l = uclass.anim_light
 
     /*
-    *   ui :: class :: fx :: anim :: dark
+    *   ui :: class :: anim :: dark
     *
     *   animates a pnl by setting pnl opacity to X with fade effect
     *
@@ -4686,7 +4845,7 @@ local uclass = { }
     uclass.anim_d = uclass.anim_dark
 
     /*
-    *   ui :: class :: fx :: anim :: to color
+    *   ui :: class :: anim :: to color
     *
     *   changes pnl color using animated fade
     *
@@ -4731,7 +4890,30 @@ local uclass = { }
         pnl:ondisabled  ( )
         pnl:notext      ( )
     end
+    uclass.SetupBtn = uclass.bsetup
 
+    /*
+    *   ui :: class :: SetupAnim
+    *
+    *   setup of animations
+    *
+    *   @alias  : SetupAnim, setupanim, anim_setup
+    *
+    *   @param  : str name
+    *   @param  : int sp
+    *   @param  : func fn
+    */
+
+    function uclass.SetupAnim( pnl, name, sp, fn )
+        fn = pnl.FnAnim or fn
+
+        pnl[ name ] = 0
+        pnl[ 'Think' ] = function( s )
+            s[ name ] = Lerp(FrameTime( ) * sp, s[ name ], fn( s ) and 1 or 0 )
+        end
+    end
+    uclass.setupanim    = uclass.SetupAnim
+    uclass.anim_setup   = uclass.SetupAnim
 
 /*
 *   metatable :: ui
@@ -4773,7 +4955,7 @@ end
 
 function ui.new( class, panel, name )
     if not class then
-        base:log( 2, lang( 'logs_inf_regclass_err' ) )
+        log( 2, lang( 'logs_inf_regclass_err' ) )
         return
     end
 
@@ -4805,7 +4987,7 @@ ui.gmod = ui.new
 
 function ui.rlib( mod, id, panel, name )
     if not id then
-        base:log( 2, lang( 'logs_inf_regclass_err' ) )
+        log( 2, lang( 'logs_inf_regclass_err' ) )
         return
     end
 
@@ -4830,7 +5012,7 @@ end
 
 function ui.add( class, parent )
     if not class then
-        base:log( 2, lang( 'logs_inf_regclass_err' ) )
+        log( 2, lang( 'logs_inf_regclass_err' ) )
         return
     end
 

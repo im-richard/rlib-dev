@@ -1,7 +1,7 @@
 /*
 *   @package        : rlib
 *   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      : (c) 2018 - 2020
+*   @copyright      : (C) 2018 - 2020
 *   @since          : 1.0.0
 *   @website        : https://rlib.io
 *   @docs           : https://docs.rlib.io
@@ -27,6 +27,7 @@ local helper                = base.h
 local design                = base.d
 local ui                    = base.i
 local konsole               = base.k
+local cvar                  = base.v
 
 /*
 *   Localized translation func
@@ -102,7 +103,7 @@ function PANEL:Init( )
     *   display parent :: static || animated
     */
 
-    if helper:cvar_bool( 'rlib_animations_enabled' ) then
+    if cvar:GetBool( 'rlib_animations_enabled' ) then
         self:SetPos( ScrW( ) - ui_w - 20, ScrH( ) + ui_h )
         self:MoveTo( ScrW( ) - ui_w - 20, ScrH( ) - ui_h - 20, 0.4, 0, -1 )
     else
@@ -141,7 +142,7 @@ function PANEL:Init( )
 
                                     local clr_rgb = Color( r, g, b, self.Alpha )
 
-                                    draw.SimpleText( utf8.char( 9930 ), pref( 'konsole.icon' ), 0, 8, clr_rgb, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( utf8.char( 9930 ), pref( 'konsole_icon' ), 0, 8, clr_rgb, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                     draw.SimpleText( lang( 'title_konsole' ), pref( 'konsole.title' ), 25, h / 2, Color( 237, 237, 237, self.Alpha ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                 end )
 
@@ -159,7 +160,7 @@ function PANEL:Init( )
 
                                 :draw ( function( s, w, h )
                                     local clr_txt = s.hover and Color( 200, 55, 55, self.Alpha ) or Color( 237, 237, 237, self.Alpha )
-                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'konsole.ico' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'konsole_exit' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
                                 :oc( function( s )
@@ -271,7 +272,7 @@ function PANEL:Init( )
                                     if s.hover then
                                         design.rbox( 6, 0, 0, w, h, Color( 15, 15, 15, 100 ) )
                                     end
-                                    draw.SimpleText( '⚙', pref( 'konsole.gear' ), w / 2, h / 2 - 4, Color( 255, 255, 255, self.Alpha ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( '⚙', pref( 'konsole_gear' ), w / 2, h / 2 - 4, Color( 255, 255, 255, self.Alpha ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
                                 :oc( function( s )
@@ -300,7 +301,7 @@ function PANEL:Init( )
                                     if s.hover then
                                         design.rbox( 6, 0, 0, w, h, Color( 15, 15, 15, 100 ) )
                                     end
-                                    draw.SimpleText( 'x', pref( 'konsole.clear' ), w / 2, h / 2 - 1, Color( 255, 255, 255, self.Alpha ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( 'x', pref( 'konsole_clear' ), w / 2, h / 2 - 1, Color( 255, 255, 255, self.Alpha ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
                                 :oc( function( s )
@@ -335,6 +336,8 @@ end
 
 local i_think = 0
 function PANEL:Think( )
+    if self.Alpha < 1 then return end
+
     self.BaseClass.Think( self )
 
     if not self.is_visible then self:MoveToBack( ) end
@@ -516,12 +519,14 @@ end
 */
 
 function PANEL:Paint( w, h )
+    if self.Alpha < 1 then return end
+
     design.rbox( 4, 0, 0, w, h, Color( 40, 40, 40, self.Alpha ) )
     design.rbox_adv( 4, 2, 2, w - 4, 34 - 4, Color( 30, 30, 30, self.Alpha ), true, true, false, false )
 
     -- resizing arrow
-    draw.SimpleText( utf8.char( 9698 ), pref( 'konsole.resizer' ), w - 3, h - 7, Color( 240, 72, 133, self.Alpha ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
-    draw.SimpleText( utf8.char( 9698 ), pref( 'konsole.resizer' ), w - 5, h - 9, Color( 40, 40, 40, self.Alpha ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+    draw.SimpleText( utf8.char( 9698 ), pref( 'konsole_resizer' ), w - 3, h - 7, Color( 240, 72, 133, self.Alpha ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+    draw.SimpleText( utf8.char( 9698 ), pref( 'konsole_resizer' ), w - 5, h - 9, Color( 40, 40, 40, self.Alpha ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
 end
 
 /*
@@ -812,10 +817,10 @@ function PANEL:Init( )
     *   animations
     */
 
-    if helper:cvar_bool( 'rlib_animations_enabled' ) then
-        ui:setpos_center( self, 0.3, 1 )
+    if cvar:GetBool( 'rlib_animations_enabled' ) then
+        ui:pos_center( self, 0.3, 1 )
     else
-        ui:setpos_center( self )
+        ui:pos_center( self )
     end
 
     /*
@@ -850,7 +855,7 @@ function PANEL:Init( )
 
                                     local clr_rgb = Color( r, g, b, self.Alpha )
 
-                                    draw.SimpleText( utf8.char( 9930 ), pref( 'konsole.icon' ), 0, 8, clr_rgb, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( utf8.char( 9930 ), pref( 'konsole_icon' ), 0, 8, clr_rgb, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                     draw.SimpleText( lang( 'konsole_settings' ), pref( 'konsole.title' ), 25, h / 2, Color( 237, 237, 237, self.Alpha ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                 end )
 
@@ -869,7 +874,7 @@ function PANEL:Init( )
 
                                 :draw ( function( s, w, h )
                                     local clr_txt = s.hover and Color( 200, 55, 55, self.Alpha ) or Color( 237, 237, 237, self.Alpha )
-                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'konsole.ico' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'konsole_exit' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -912,7 +917,7 @@ function PANEL:Init( )
 
         for k, v in pairs( pl_settings ) do
             if base._def.elements_ignore[ v.stype ] then continue end
-            base.cvar:setup( v.stype, v.id, v.default, v.values, v.forceset, v.desc )
+            cvar:Setup( v.stype, v.id, v.default, v.values, v.forceset, v.desc )
         end
     end
 
@@ -1137,7 +1142,7 @@ end
 */
 
 function PANEL:HandleSetup( cat, data, bVarg )
-    if helper:cvar_bool( 'console_timestamps' ) then
+    if cvar:GetBool( 'console_timestamps' ) then
         self.resp:InsertColorChange( 215, 215, 215, 255 )
         self.resp:AppendText( '[' .. cfg.konsole.ts_format .. '] ' )
     end

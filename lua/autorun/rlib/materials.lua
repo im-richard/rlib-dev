@@ -1,11 +1,10 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          3.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
-*   @file           materials.lua
+*   @package        : rlib
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2020 - 2020
+*   @since          : 3.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -19,7 +18,7 @@
 /*
 *   DEVELOPER NOTE
 *   ---------------------------------------------------------------------------------------------
-*   rlib currently houses rmats v1 and v2
+*   rlib currently contains rmats v1 and v2
 *
 *   v1 will be deprecated in a future release and is slowly being phased out
 *   for a more optimized system which caches the materials directly within
@@ -41,13 +40,7 @@ local cfg               = base.settings
 */
 
 local helper            = base.h
-local storage           = base.s
-local utils             = base.u
-local access            = base.a
-local tools             = base.t
 local materials         = base.m
-local konsole           = base.k
-local sys               = base.sys
 
 /*
 *   Localized glua
@@ -58,21 +51,8 @@ local type              = type
 local tostring          = tostring
 local istable           = istable
 local Material          = Material
-local surface           = surface
 local string            = string
 local sf                = string.format
-
-/*
-*   Localized cmd func
-*
-*   @source : lua\autorun\libs\calls
-*   @param  : str t
-*   @param  : varg { ... }
-*/
-
-local function call( t, ... )
-    return rlib:call( t, ... )
-end
 
 /*
 *   Localized translation func
@@ -83,26 +63,23 @@ local function lang( ... )
 end
 
 /*
+*   simplifiy funcs
+*/
+
+local function log( ... ) base:log( ... ) end
+
+/*
 *	prefix :: create id
 */
 
 local function cid( id, suffix )
-    local affix = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or prefix
-    affix = affix:sub( -1 ) ~= '.' and string.format( '%s.', affix ) or affix
+    local affix     = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or prefix
+    affix           = affix:sub( -1 ) ~= '.' and sf( '%s.', affix ) or affix
 
-    id = isstring( id ) and id or 'noname'
-    id = id:gsub( '[%c%s]', '.' )
+    id              = isstring( id ) and id or 'noname'
+    id              = id:gsub( '[%c%s]', '.' )
 
-    return string.format( '%s%s', affix, id )
-end
-
-/*
-*	prefix ids
-*/
-
-local function pid( str, suffix )
-    local state = ( isstring( suffix ) and suffix ) or ( base and base.manifest.prefix ) or false
-    return cid( str, state )
+    return sf( '%s%s', affix, id )
 end
 
 /*
@@ -131,7 +108,7 @@ end
 
 function materials:get_manifest( mod )
     if not mod then
-        base:log( 2, 'specified module not available\n%s', debug.traceback( ) )
+        log( 2, 'specified module not available\n%s', debug.traceback( ) )
         return false
     end
 
@@ -142,7 +119,7 @@ function materials:get_manifest( mod )
     end
 
     mod = isstring( mod ) and mod or 'unknown'
-    base:log( 6, 'cannot fetch materials manifest table for invalid module [ %s ]\n%s', mod, debug.traceback( ) )
+    log( 6, 'cannot fetch materials manifest table for invalid module [ %s ]\n%s', mod, debug.traceback( ) )
 
     return false
 end
@@ -202,14 +179,14 @@ function materials:register_v1( src, suffix, append )
                 material    = Material( m[ 2 ], m[ 3 ] ),
                 path        = m[ 2 ],
             }
-            base:log( 6, '[L] [' .. append .. '_' .. suffix .. '_' .. m[ 1 ] .. ']' )
+            log( 6, '[L] [' .. append .. '_' .. suffix .. '_' .. m[ 1 ] .. ']' )
         else
             base.m[ append .. '_' .. suffix .. '_' .. m[ 1 ] ] =
             {
                 material    = Material( m[ 2 ], 'noclamp smooth' ),
                 path        = m[ 2 ]
             }
-            base:log( 6, '[L] [' .. append .. '_' .. suffix .. '_' .. m[ 1 ] .. ']' )
+            log( 6, '[L] [' .. append .. '_' .. suffix .. '_' .. m[ 1 ] .. ']' )
         end
     end
 end
@@ -225,7 +202,7 @@ end
 
 function materials:register( mod )
     if not mod then
-        base:log( 2, 'specified module not available\n%s', debug.traceback( ) )
+        log( 2, 'specified module not available\n%s', debug.traceback( ) )
         return
     end
 
@@ -244,7 +221,7 @@ function materials:register( mod )
             path        = mpath
         }
 
-        base:log( 6, '[L] [' .. mpath .. ']' )
+        log( 6, '[L] [' .. mpath .. ']' )
     end
 end
 
@@ -262,7 +239,7 @@ end
 
 function materials:getcache( mod, src )
     if not mod then
-        base:log( 2, 'specified module not available\n%s', debug.traceback( ) )
+        log( 2, 'specified module not available\n%s', debug.traceback( ) )
         return
     end
 
@@ -274,14 +251,14 @@ function materials:getcache( mod, src )
     end
 
     if not bSuccess then
-        base:log( 2, 'unspecified module called for material loader\n%s', debug.traceback( ) )
+        log( 2, 'unspecified module called for material loader\n%s', debug.traceback( ) )
         return
     end
 
     src = ( istable( src ) or isstring( src ) and mod[ src ] ) or mod._cache.mats
 
     if not istable( src ) then
-        base:log( 2, 'no cached materials registered with mod\n%s', debug.traceback( ) )
+        log( 2, 'no cached materials registered with mod\n%s', debug.traceback( ) )
         return
     end
 
@@ -306,12 +283,12 @@ end
 
 function materials:call( mod, id, ref )
     if not mod then
-        base:log( 2, 'cannot call material; invalid module specified\n%s', debug.traceback( ) )
+        log( 2, 'cannot call material; invalid module specified\n%s', debug.traceback( ) )
         return
     end
 
     if not id then
-        base:log( 2, 'cannot call material; invalid id specified\n%s', debug.traceback( ) )
+        log( 2, 'cannot call material; invalid id specified\n%s', debug.traceback( ) )
         return
     end
 

@@ -1,11 +1,10 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          3.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
-*   @file           register.lua
+*   @package        : rlib
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2020 - 2020
+*   @since          : 3.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -31,13 +30,12 @@ local cfg               = base.settings
 */
 
 local helper            = base.h
-local storage           = base.s
-local utils             = base.u
-local access            = base.a
-local tools             = base.t
-local konsole           = base.k
-local sys               = base.sys
-local resources         = base.resources
+
+/*
+*   simplifiy funcs
+*/
+
+local function log( ... ) base:log( ... ) end
 
 /*
 *	prefix :: create id
@@ -73,10 +71,10 @@ function base.register:particle( src )
     if not isstring( src ) then return end
     if string.GetExtensionFromFilename( src ) ~= 'pcf' then
         PrecacheParticleSystem( src )
-        base:log( RLIB_LOG_CACHE, '+ ptc [ %s ]', src )
+        log( RLIB_LOG_CACHE, '+ ptc [ %s ]', src )
     else
         game.AddParticles( src )
-        base:log( RLIB_LOG_CACHE, '+ ptc [ %s ] ', src )
+        log( RLIB_LOG_CACHE, '+ ptc [ %s ] ', src )
     end
 end
 
@@ -94,7 +92,7 @@ function base.register:sound( src )
         return
     end
     util.PrecacheSound( src )
-    base:log( RLIB_LOG_CACHE, '+ snd [ %s ]', src )
+    log( RLIB_LOG_CACHE, '+ snd [ %s ]', src )
 end
 
 /*
@@ -115,7 +113,7 @@ function base.register:model( src, bIsValid )
     end
     if bIsValid and not util.IsValidModel( src ) then return end
     util.PrecacheModel( src )
-    base:log( RLIB_LOG_CACHE, '+ mdl [ %s ]', src )
+    log( RLIB_LOG_CACHE, '+ mdl [ %s ]', src )
 end
 
 /*
@@ -136,7 +134,7 @@ function base.register:rpmodels( )
                 if string.GetExtensionFromFilename( mdl ) ~= 'mdl' then continue end
                 util.PrecacheModel( mdl )
                 if cfg.cache.debug_listall then
-                    base:log( RLIB_LOG_CACHE, '+ darkrp mdl [ %s ]', mdl )
+                    log( RLIB_LOG_CACHE, '+ darkrp mdl [ %s ]', mdl )
                 end
                 i = i + 1
             end
@@ -144,12 +142,12 @@ function base.register:rpmodels( )
             if string.GetExtensionFromFilename( v.model ) ~= 'mdl' then continue end
             util.PrecacheModel( v.model )
             if cfg.cache.debug_listall then
-                base:log( RLIB_LOG_CACHE, '+ darkrp mdl [ %s ]', v.model )
+                log( RLIB_LOG_CACHE, '+ darkrp mdl [ %s ]', v.model )
             end
             i = i + 1
         end
     end
 
-    base:log( RLIB_LOG_CACHE, '+ darkrp mdl [ %s total ]', tostring( i ) )
+    log( RLIB_LOG_CACHE, '+ darkrp mdl [ %s total ]', tostring( i ) )
 end
 hook.Add( 'InitPostEntity', pid( 'register.rpmdl' ), base.register.rpmodels )

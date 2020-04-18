@@ -1,11 +1,10 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
-*   @file           ccl.lua
+*   @package        : rlib
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -34,13 +33,9 @@ local cfg               = base.settings
 local helper            = base.h
 local design            = base.d
 local ui                = base.i
-local mats              = base.m
-local utils             = base.u
 local access            = base.a
-local tools             = base.t
-local storage           = base.s
 local konsole           = base.k
-local sys               = base.sys
+local cvar              = base.v
 
 /*
 *   Localized lua funcs
@@ -49,45 +44,14 @@ local sys               = base.sys
 */
 
 local pairs             = pairs
-local ipairs            = ipairs
 local type              = type
-local error             = error
-local print             = print
-local GetConVar         = GetConVar
-local tonumber          = tonumber
-local tostring          = tostring
-local IsValid           = IsValid
 local istable           = istable
-local isfunction        = isfunction
-local isentity          = isentity
 local isnumber          = isnumber
-local IsColor           = IsColor
 local Color             = Color
-local Material          = Material
-local ScreenScale       = ScreenScale
-local gui               = gui
 local vgui              = vgui
-local input             = input
-local table             = table
-local player            = player
-local math              = math
 local surface           = surface
-local render            = render
 local string            = string
 local sf                = string.format
-local reg_font          = surface.CreateFont
-
-/*
-*   Localized cmd func
-*
-*   @source : lua\autorun\libs\calls
-*   @param  : str t
-*   @param  : varg { ... }
-*/
-
-local function call( t, ... )
-    return rlib:call( t, ... )
-end
 
 /*
 *   Localized translation func
@@ -96,6 +60,12 @@ end
 local function lang( ... )
     return base:lang( ... )
 end
+
+/*
+*   simplifiy funcs
+*/
+
+local function log( ... ) base:log( ... ) end
 
 /*
 *	prefix :: create id
@@ -128,13 +98,48 @@ end
 
     helper._pco_cvars =
     {
-        { id = 'gmod_mcore_test' },
-        { id = 'r_queued_ropes' },
-        { id = 'cl_threaded_bone_setup' },
-        { id = 'cl_threaded_client_leaf_system' },
-        { id = 'mat_queue_mode', val = '-1' },
-        { id = 'r_threaded_renderables' },
-        { id = 'r_threaded_particles' },
+        { id = 'gmod_mcore_test',                   off = '0', on = '1'     },
+        { id = 'mat_queue_mode',                    off = '0', on = '-1'    },
+        { id = 'studio_queue_mode',                 off = '0', on = '1'     },
+        { id = 'cl_threaded_bone_setup',            off = '0', on = '1'     },
+        { id = 'cl_threaded_client_leaf_system',    off = '0', on = '1'     },
+        { id = 'r_threaded_client_shadow_manager',  off = '0', on = '1'     },
+        { id = 'r_threaded_particles',              off = '0', on = '1'     },
+        { id = 'r_threaded_renderables',            off = '0', on = '1'     },
+        { id = 'r_queued_ropes',                    off = '0', on = '1'     },
+        { id = 'r_shadowfromworldlights',           off = '1', on = '0'     },
+        { id = 'nb_shadow_dist',                    off = '1', on = '0'     },
+        { id = 'mat_shadowstate',                   off = '1', on = '0'     },
+        { id = 'r_shadowrendertotexture',           off = '1', on = '0'     },
+        { id = 'r_shadowmaxrendered',               off = '1', on = '0'     },
+    }
+
+/*
+*   helper :: internals :: pco :: hooks
+*
+*   list of hooks to manage when pco toggled
+*/
+
+    helper._pco_hooks =
+    {
+        { event = 'RenderScreenspaceEffects',       name = 'RenderSharpen'          },
+        { event = 'RenderScreenspaceEffects',       name = 'RenderMaterialOverlay'  },
+        { event = 'RenderScreenspaceEffects',       name = 'RenderMotionBlur'       },
+        { event = 'RenderScreenspaceEffects',       name = 'RenderColorModify'      },
+        { event = 'RenderScreenspaceEffects',       name = 'RenderSobel'            },
+        { event = 'RenderScreenspaceEffects',       name = 'RenderBloom'            },
+        { event = 'RenderScreenspaceEffects',       name = 'RenderSunbeams'         },
+        { event = 'RenderScreenspaceEffects',       name = 'RenderToyTown'          },
+        { event = 'RenderScreenspaceEffects',       name = 'RenderTexturize'        },
+        { event = 'RenderScene',                    name = 'RenderStereoscopy'      },
+        { event = 'RenderScene',                    name = 'RenderSuperDoF'         },
+        { event = 'PostRender',                     name = 'RenderFrameBlend'       },
+        { event = 'PreRender',                      name = 'PreRenderFrameBlend'    },
+        { event = 'RenderScreenspaceEffects',       name = 'RenderBokeh'            },
+        { event = 'NeedsDepthPass',                 name = 'NeedsDepthPass_Bokeh'   },
+        { event = 'PostDrawEffects',                name = 'RenderWidgets'          },
+        { event = 'PostDrawEffects',                name = 'RenderHalos'            },
+        { event = 'Think',                          name = 'DOFThink'               },
     }
 
 /*
@@ -240,17 +245,17 @@ function helper.str:crop( phrase, len, font )
 
     if not phrase or not len then
         local notfound = not phrase and 'phrase' or not len and 'length'
-        base:log( 6, 'missing [ %s ] and unable to crop', notfound )
+        log( 6, 'missing [ %s ] and unable to crop', notfound )
         return false
     end
 
     if phrase and phrase == '' then
-        base:log( 6, 'phrase contains empty str' )
+        log( 6, 'phrase contains empty str' )
     end
 
     if not font then
         font = 'Marlett'
-        base:log( 6, 'strcrop font not specified, defaulting to [%s]', font )
+        log( 6, 'strcrop font not specified, defaulting to [%s]', font )
     end
 
     surface.SetFont( font )
@@ -295,80 +300,6 @@ function helper.str:crop( phrase, len, font )
 end
 
 /*
-*   cvar :: register
-*
-*   called client-side when cvars need to be registerd with a player
-*/
-
-function base.cvar:register( )
-    if not istable( ui.cvars ) then return end
-
-    local _toregister = { }
-    for k, v in helper:sortedkeys( ui.cvars ) do
-        _toregister[ #_toregister + 1 ] = v
-    end
-
-    table.sort( _toregister, function( a, b ) return a.sid < b.sid end )
-
-    for k, v in pairs( _toregister ) do
-        if base._def.elements_ignore[ v.stype ] then continue end
-        base.cvar:setup( v.stype, v.id, v.default, v.values, v.forceset, v.desc )
-    end
-end
-
-/*
-*   cvar :: setup cvar properties
-*
-*   assigns a clientconvar based on the parameters specified. these convars will then be used later in 
-*   order for the player.
-*
-*   forceset will ensure that if the server owner ever updates the core theme manifest that it will 
-*   auto-push the updated changes to the client on next connection
-*
-*   @param  : str flag
-*   @param  : str id
-*   @param  : str def
-*   @param  : tbl vals
-*   @param  : bool forceset
-*   @param  : str helptext
-*   @return : void
-*/
-
-function base.cvar:setup( flag, id, def, vals, forceset, helptext )
-    if not helper.str:valid( flag ) or not helper.str:valid( id ) then
-        base:log( 2, lang( 'properties_setup' ) )
-        return false
-    end
-
-    forceset = forceset or false
-    helptext = isstring( helptext ) and helptext or 'no description'
-
-    if flag ~= 'rgba' and flag ~= 'object' and flag ~= 'dropdown' then
-        CreateClientConVar( id, def, true, false, helptext )
-        if forceset then
-            local cvar = GetConVar( id )
-            cvar:SetString( def )
-        end
-    elseif flag == 'dropdown' then
-        CreateClientConVar( id, def or '', true, false, helptext )
-        if forceset then
-            local cvar = GetConVar( id )
-            cvar:SetString( def )
-        end
-    elseif flag == 'object' or flag == 'rgba' then
-        if not istable( vals ) then return end
-        for dn, dv in pairs( vals ) do
-            local assign_id = id .. '_' .. dn
-            CreateClientConVar( assign_id, dv, true, false, helptext )
-            if forceset then
-                local cvar = GetConVar( assign_id )
-                cvar:SetString( dv )
-            end
-        end
-    end
-end
-
-/*
 *   failsafe check
 *
 *   checks to see if any theme properties are missing
@@ -380,42 +311,9 @@ end
 
 function helper:fscheck( tbl, val )
     for k, v in pairs( tbl ) do
-        if ( type( v ) == 'table' ) and ( v.id == val ) then return true end
+        if ( istable( v ) ) and ( v.id == val ) then return true end
     end
     return false
-end
-
-/*
-*   create convar
-*
-*   create a client convar
-*
-*   @param  : str name
-*   @param  : str default
-*   @param  : bool shouldsave
-*   @param  : bool userdata
-*   @param  : str helptext
-*/
-
-function helper:cvar_cl_create( name, default, shouldsave, userdata, helptext )
-    if not helper.str:valid( name ) then
-        base:log( 2, lang( 'cvar_missing_name' ) )
-        return false
-    end
-
-    if not ConVarExists( name ) then
-        if not default then
-            base:log( 2, lang( 'cvar_missing_def', name ) )
-            return false
-        end
-
-        shouldsave  = shouldsave or true
-        userdata    = userdata or false
-        helptext    = helptext or ''
-
-        CreateClientConVar( name, default, shouldsave, userdata, helptext )
-        base:log( 6, lang( 'cvar_added', name ) )
-    end
 end
 
 /*
@@ -461,7 +359,7 @@ function access:initialize( perms )
     end
 
 end
-hook.Add( pid( 'initialize.post' ), pid( 'initialize.perms' ), access.initialize )
+hook.Add( pid( 'initialize.post' ), pid( 'initialize_perms' ), access.initialize )
 
 /*
 *   konsole :: send
@@ -515,141 +413,6 @@ function konsole:send_varg( mtype, msg, ... )
 end
 
 /*
-*   concommand :: matlist
-*
-*   lists materials that can be shared through-out scripts
-*/
-
-function utils.cc_materials_list( pl, cmd, args )
-
-    local ccmd = base.calls:get( 'commands', 'rlib_mats' )
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   functionality
-    */
-
-    if not base.m or not istable( base.m ) then return end
-
-    for _, m in pairs( base.m ) do
-        base:log( 6, '[L] [' .. _ .. ']' )
-    end
-end
-
-/*
-*   concommand :: registered panels
-* 
-*   returns a list of registered panels
-*    
-*   @usage  : rlib.panels <returns all panels>
-*   @usage  : rlib.panels -s termhere <returns entries matching term>
-*/
-
-function utils.cc_rpanels( pl, cmd, args )
-
-    local ccmd = base.calls:get( 'commands', 'rlib_panels' )
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   functionality
-    */
-
-    local arg_param     = args and args[ 1 ] or false
-    local arg_searchstr = args and args[ 2 ] or nil
-    local cnt_entries   = 0
-    local output        = '\n\n [' .. rlib.manifest.name .. '] :: registered panels'
-
-    base:console( pl, output )
-
-    /*
-    *   loop registered panels table
-    */
-
-    local bCatListed    = false
-    local cat_id        = ''
-    local tb_pnls       = base.p
-
-    if arg_param and arg_param == '-s' and arg_searchstr then
-        base:console( pl, Color( 255, 0, 0 ), ' ', Color( 255, 0, 0 ), lang( 'search_term', arg_searchstr ) )
-    end
-
-    for a, b in pairs( tb_pnls ) do
-
-        bCatListed = a ~= cat_id and false or bCatListed
-
-        for k, v in pairs( b ) do
-
-            if not bCatListed then
-                local l_category = sf( ' %s', a )
-                base:console( pl, lang( 'sym_sp' ) )
-
-                local c1_lbl = sf( '%-15s', l_category )
-                local c2_lbl = sf( '%-35s', lang( 'col_id' ) )
-                local c3_lbl = sf( '%-35s', lang( 'col_ref_id' ) )
-                local c0_out = sf( '%s %s %s', c1_lbl, c2_lbl, c3_lbl )
-
-                base:console( pl, Color( 255, 255, 255 ), c0_out )
-                base:console( pl, lang( 'sym_sp' ) )
-
-                bCatListed, cat_id = true, a
-            end
-
-            local i = 0
-            for c in helper.get.data( v ) do
-                i = i + 1
-            end
-
-            local id = ''
-            local cnt_fields = 0
-            for l, m in pairs( v ) do
-                if arg_searchstr and not string.match( k, arg_searchstr ) then continue end
-                cnt_fields = cnt_fields + 1
-
-                if cnt_fields ~= 1 then id = '' else id = k end
-                local c1_data = sf( '%-15s', tostring( '' ) )
-                local c2_data = sf( '%-35s', tostring( id ) )
-                local c3_data = sf( '%-35s', tostring( m ) )
-                local c0_data = sf( '%s%s %s %s ', c0_data, c1_data, c2_data, c3_data )
-
-                if cnt_fields == i then
-                    c0_data = c0_data .. '\n'
-                    cnt_fields = 0
-                else
-                    cnt_entries = cnt_entries + 1
-                end
-
-                base:console( pl, Color( 255, 255, 0 ), c0_data )
-            end
-
-        end
-
-    end
-
-    base:console( pl, lang( 'sym_sp' ) )
-    base:console( pl, Color( 0, 255, 0 ), sf( lang( 'inf_found_cnt', cnt_entries ) ) )
-    base:console( pl, lang( 'sym_sp' ) )
-
-end
-
-/*
 *   netlib :: debug :: ui
 *
 *   prompts an in-game notification for issues
@@ -695,7 +458,7 @@ local function netlib_user_update( )
     if not helper.ok.ply( LocalPlayer( ) ) then return end
     local pl = LocalPlayer( )
 
-    base.cvar:register( )
+    cvar:Prepare( )
 
     /*
     *   create ply var table
@@ -747,19 +510,21 @@ net.Receive( 'rlib.debug.listener', netlib_debug_listener )
 */
 
 local function initialize( )
-    timex.simple( pid( '__gm.initialize' ), 1, function( )
+    timex.simple( '__lib_initialize', 1, function( )
         for l, m in SortedPairs( base.w ) do
             steamworks.FileInfo( l, function( res )
                 if not res or not res.title then return end
                 base.w[ l ].steamapi = { title = res.title }
-                base:log( RLIB_LOG_WS, lang( 'ws_registered', m.id, l ) )
+                log( RLIB_LOG_WS, lang( 'ws_registered', m.id, l ) )
             end )
         end
     end )
 
-    hook.Run( pid( 'initialize' ) )
+    timex.simple( 10, function( )
+        hook.Run( pid( 'initialize' ) )
+    end )
 end
-hook.Add( 'Initialize', pid( '__gm.initialize' ), initialize )
+hook.Add( 'Initialize', pid( '__lib_initialize' ), initialize )
 
 /*
 *   rlib :: initialize :: post
@@ -775,22 +540,20 @@ hook.Add( 'Initialize', pid( '__gm.initialize' ), initialize )
 *   commonly used for actions such as registering permissions, concommands, etc.
 */
 
-local function initialize_post( )
+local function __lib_initpostentity( )
     hook.Run( pid( 'cmd.register' ) )
     hook.Run( pid( 'pkg.register' ) )
     hook.Run( pid( 'fnt.register' ) )
 
-    for k, v in pairs( _G.rcalls.commands ) do
-        if ( v.scope == 2 or v.scope == 3 ) and v.enabled then
-            base.cc.Add( v.id, v.assoc )
-        else
-            continue
-        end
-    end
+    /*
+    *   register commands
+    */
+
+    rcc.prepare( )
 
     hook.Run( pid( 'initialize.post' ) )
 end
-hook.Add( 'InitPostEntity', pid( '__gm.initpostentity' ), initialize_post )
+hook.Add( 'InitPostEntity', pid( '__lib_initpostentity' ), __lib_initpostentity )
 
 /*
 *	rlib :: think :: resolution
@@ -812,7 +575,7 @@ local function think_pl_res( )
         pl.scnres_w, pl.scnres_h = ScrW( ), ScrH( )
     end
 
-    i_rlib_think = CurTime( ) + 0.2
+    i_rlib_think = CurTime( ) + 0.5
 end
 hook.Add( 'Think', pid( 'think.pl.res' ), think_pl_res )
 

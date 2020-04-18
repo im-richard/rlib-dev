@@ -1,7 +1,7 @@
 /*
 *   @package        : rlib
 *   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      : (c) 2018 - 2020
+*   @copyright      : (C) 2018 - 2020
 *   @since          : 1.0.0
 *   @website        : https://rlib.io
 *   @docs           : https://docs.rlib.io
@@ -26,6 +26,7 @@ local mf                    = base.manifest
 local helper                = base.h
 local design                = base.d
 local ui                    = base.i
+local cvar                  = base.v
 
 /*
 *   localization :: glua
@@ -103,7 +104,7 @@ function PANEL:Init( )
     *   display parent :: static || animated
     */
 
-    if helper:cvar_bool( 'rlib_animations_enabled' ) then
+    if cvar:GetBool( 'rlib_animations_enabled' ) then
         self:SetPos( ( ScrW( ) / 2 ) - ( ui_w / 2 ), ScrH( ) + ui_h )
         self:MoveTo( ( ScrW( ) / 2 ) - ( ui_w / 2 ), ( ScrH( ) / 2 ) - (  ui_h / 2 ), 0.4, 0, -1 )
     else
@@ -116,13 +117,13 @@ function PANEL:Init( )
 
     self.lblTitle               = ui.new( 'lbl', self           )
     :notext                     (                               )
-    :font                       ( pref( 'report.title' )        )
+    :font                       ( pref( 'report_title' )        )
     :clr                        ( Color( 255, 255, 255, 255 )   )
 
                                 :draw( function( s, w, h )
                                     if not self.title or self.title == '' then return end
-                                    draw.SimpleText( utf8.char( 9930 ), pref( 'report.icon' ), 0, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( self.title, pref( 'report.title' ), 25, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( utf8.char( 9930 ), pref( 'report_icon' ), 0, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( self.title, pref( 'report_title' ), 25, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -141,7 +142,7 @@ function PANEL:Init( )
 
                                 :draw( function( s, w, h )
                                     local clr_txt = s.hover and Color( 200, 55, 55, 255 ) or Color( 237, 237, 237, 255 )
-                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'report.exit' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'report_exit' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -209,7 +210,7 @@ function PANEL:Init( )
     :static                     ( FILL                              )
     :margin                     ( 3, 3, 0, 3                        )
     :notext                     (                                   )
-    :font                       ( pref( 'report.err' )              )
+    :font                       ( pref( 'report_err' )              )
     :clr                        ( Color( 200, 100, 100, 255 )       )
     :align                      ( 6                                 )
 
@@ -230,7 +231,7 @@ function PANEL:Init( )
     :canedit                    ( false                             )
     :autoupdate	                ( true 					            )
     :scur	                    ( Color( 255, 255, 255, 255 ), 'beam' )
-    :txt	                    ( lang( 'reports_desc' ), Color( 255, 255, 255, 255 ), pref( 'report.desc' ) )
+    :txt	                    ( lang( 'reports_desc' ), Color( 255, 255, 255, 255 ), pref( 'report_desc' ) )
     :drawentry                  ( clr_text, clr_cur, clr_hl         )
 
     /*
@@ -270,7 +271,7 @@ function PANEL:Init( )
 
                                 :draw( function( s, w, h )
                                     design.rbox( 6, 0, 0, w, h, Color( 30, 30, 30, 255 ) )
-                                    draw.SimpleText( utf8.char( 10045 ), pref( 'report.auth.icon' ), 2, 12, Color( 240, 113, 113, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( utf8.char( 10045 ), pref( 'report_auth_icon' ), 2, 12, Color( 240, 113, 113, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -307,7 +308,7 @@ function PANEL:Init( )
     :drawbg                     ( false                             )
     :mline	                    ( false 				            )
     :canedit                    ( true                              )
-    :font                       ( pref( 'report.auth' )             )
+    :font                       ( pref( 'report_auth' )             )
     :text                       ( dtxt_default                      )
     :scur	                    ( Color( 255, 255, 255, 255 ), 'beam' )
     :drawentry                  ( clr_text, clr_cur, clr_hl         )
@@ -350,7 +351,7 @@ function PANEL:Init( )
                                     if s.hover then
                                         design.rbox( 6, 0, 0, w, h, Color( 15, 15, 15, 100 ) )
                                     end
-                                    draw.SimpleText( 'X', pref( 'report.btn.clr' ), w / 2, h / 2, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( 'X', pref( 'report_btn_clr' ), w / 2, h / 2, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
                                 :oc( function( s )
@@ -374,7 +375,7 @@ function PANEL:Init( )
                                     if s.hover then
                                         design.rbox( 6, 0, 0, w, h, Color( 15, 15, 15, 100 ) )
                                     end
-                                    draw.SimpleText( utf8.char( 9881 ), pref( 'report.btn.auth' ), 8, 6, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( utf8.char( 9881 ), pref( 'report_btn_auth' ), 8, 6, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
                                 :oc( function( s )
@@ -407,7 +408,7 @@ function PANEL:Init( )
                                     if s.hover then
                                         design.rbox( 6, 0, 0, w, h, Color( 15, 15, 15, 100 ) )
                                     end
-                                    draw.SimpleText( lang('reports_btn_submit'), pref( 'report.btn.send' ), w / 2, h / 2 + 1, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( lang('reports_btn_submit'), pref( 'report_btn_send' ), w / 2, h / 2 + 1, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
                                 :oc( function( s )
@@ -585,8 +586,8 @@ function PANEL:Paint( w, h )
     design.rbox_adv( 4, 2, 2, w - 4, 34 - 4, Color( 30, 30, 30, 255 ), true, true, false, false )
 
     -- resizing arrow
-    draw.SimpleText( utf8.char( 9698 ), pref( 'report.resizer' ), w - 3, h - 7, Color( 240, 72, 133, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
-    draw.SimpleText( utf8.char( 9698 ), pref( 'report.resizer' ), w - 5, h - 9, Color( 40, 40, 40, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+    draw.SimpleText( utf8.char( 9698 ), pref( 'report_resizer' ), w - 3, h - 7, Color( 240, 72, 133, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+    draw.SimpleText( utf8.char( 9698 ), pref( 'report_resizer' ), w - 5, h - 9, Color( 40, 40, 40, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
 end
 
 /*

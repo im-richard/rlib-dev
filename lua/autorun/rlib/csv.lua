@@ -1,11 +1,10 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
-*   @file           csv.lua
+*   @package        : rlib
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -22,10 +21,10 @@
 
 rlib                    = rlib or { }
 local base              = rlib
-local mf                = base.manifest
-local prefix            = mf.prefix
-local script            = mf.name
 local cfg               = base.settings
+local mf                = base.manifest
+local pf                = mf.prefix
+local script            = mf.name
 
 /*
 *   Localized rlib routes
@@ -33,12 +32,11 @@ local cfg               = base.settings
 
 local helper            = base.h
 local storage           = base.s
-local utils             = base.u
 local access            = base.a
 local tools             = base.t
 local konsole           = base.k
+local cvar              = base.v
 local sys               = base.sys
-local timex             = timex
 
 /*
 *   Localized lua funcs
@@ -54,20 +52,17 @@ local tostring          = tostring
 local IsValid           = IsValid
 local istable           = istable
 local isfunction        = isfunction
-local isentity          = isentity
 local isnumber          = isnumber
 local isstring          = isstring
-local type              = type
 local file              = file
 local debug             = debug
 local util              = util
 local table             = table
 local os                = os
 local coroutine         = coroutine
-local player            = player
-local math              = math
 local string            = string
 local sf                = string.format
+local ts                = tostring
 local execq             = RunString
 
 /*
@@ -108,13 +103,13 @@ end
 */
 
 local function pref( id, suffix )
-    local affix     = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or prefix
-    affix           = affix:sub( -1 ) ~= '.' and string.format( '%s.', affix ) or affix
+    local affix     = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or pf
+    affix           = affix:sub( -1 ) ~= '.' and sf( '%s.', affix ) or affix
 
     id              = isstring( id ) and id or 'noname'
     id              = id:gsub( '[%c%s]', '.' )
 
-    return string.format( '%s%s', affix, id )
+    return sf( '%s%s', affix, id )
 end
 
 /*
@@ -130,26 +125,44 @@ end
 *   network library
 */
 
-util.AddNetworkString( 'rlib.udm.check'             )
-util.AddNetworkString( 'rlib.konsole'               )
-util.AddNetworkString( 'rlib.debug.console'         )
-util.AddNetworkString( 'rlib.debug.listener'        )
-util.AddNetworkString( 'rlib.debug.ui'              )
-util.AddNetworkString( 'rlib.chat.msg'              )
-util.AddNetworkString( 'rlib.chat.console'          )
-util.AddNetworkString( 'rlib.user'                  )
-util.AddNetworkString( 'rlib.user.join'             )
-util.AddNetworkString( 'rlib.user.update'           )
-util.AddNetworkString( 'rlib.rsay'                  )
-util.AddNetworkString( 'rlib.tools.pco'             )
-util.AddNetworkString( 'rlib.tools.lang'            )
-util.AddNetworkString( 'rlib.tools.dc'              )
-util.AddNetworkString( 'rlib.tools.rmain'           )
-util.AddNetworkString( 'rlib.tools.rcfg'            )
-util.AddNetworkString( 'rlib.tools.mdlviewer'       )
-util.AddNetworkString( 'rlib.tools.report'          )
-util.AddNetworkString( 'rlib.notify'                )
-util.AddNetworkString( 'rlib.notify.slider'         )
+local net_register =
+{
+    'rlib.debug.console',
+    'rlib.debug.listener',
+    'rlib.debug.ui',
+    'rlib.konsole',
+    'rlib.rsay',
+    'rlib.sms.umsg',
+    'rlib.sms.konsole',
+    'rlib.sms.notify',
+    'rlib.sms.inform',
+    'rlib.sms.bubble',
+    'rlib.tools.pco',
+    'rlib.tools.lang',
+    'rlib.tools.dc',
+    'rlib.tools.rmain',
+    'rlib.tools.rcfg',
+    'rlib.tools.mdlviewer',
+    'rlib.tools.report',
+    'rlib.udm.check',
+    'rlib.user',
+    'rlib.user.join',
+    'rlib.user.update',
+    'rlib.welcome',
+}
+
+for k, v in pairs( net_register ) do
+    util.AddNetworkString( v )
+end
+
+/*
+*   simplifiy funcs
+*/
+
+local function con      ( ... ) base:console( ... ) end
+local function log      ( ... ) base:log( ... ) end
+local function route    ( ... ) base.msg:route( ... ) end
+local function direct   ( ... ) base.msg:direct( ... ) end
 
 /*
 *   metatable :: ply
@@ -158,40 +171,65 @@ util.AddNetworkString( 'rlib.notify.slider'         )
 local pmeta = FindMetaTable( 'Player' )
 
 /*
-*   message system
+*   msg sys :: broadcast
 */
 
 function base:broadcast( ... )
     local args      = { ... }
-    net.Start       ( 'rlib.chat.msg'       )
+    net.Start       ( 'rlib.sms.umsg'       )
     net.WriteTable  ( args                  )
     net.Broadcast   (                       )
 end
 
-function pmeta:msg( ... )
+function base:inform( ... )
     local args      = { ... }
-    net.Start       ( 'rlib.chat.msg'       )
+    net.Start       ( 'rlib.sms.inform'     )
     net.WriteTable  ( args                  )
-    net.Send        ( self                  )
+    net.Broadcast   (                       )
 end
+
+function base:bubble( ... )
+    local args      = { ... }
+    net.Start       ( 'rlib.sms.bubble'     )
+    net.WriteTable  ( args                  )
+    net.Broadcast   (                       )
+end
+
+/*
+*   msg sys :: pmeta
+*/
 
 function pmeta:notify( ... )
     local args      = { ... }
-    net.Start       ( 'rlib.notify'         )
+    net.Start       ( 'rlib.sms.notify'     )
     net.WriteTable  ( args                  )
     net.Send        ( self                  )
 end
 
 function pmeta:inform( ... )
     local args      = { ... }
-    net.Start       ( 'rlib.notify.slider'  )
+    net.Start       ( 'rlib.sms.inform'     )
     net.WriteTable  ( args                  )
     net.Send        ( self                  )
 end
 
-function pmeta:sendconsole( ... )
+function pmeta:umsg( ... )
     local args      = { ... }
-    net.Start       ( 'rlib.chat.console'   )
+    net.Start       ( 'rlib.sms.umsg'       )
+    net.WriteTable  ( args                  )
+    net.Send        ( self                  )
+end
+
+function pmeta:bubble( ... )
+    local args      = { ... }
+    net.Start       ( 'rlib.sms.bubble'     )
+    net.WriteTable  ( args                  )
+    net.Send        ( self                  )
+end
+
+function pmeta:konsole( ... )
+    local args      = { ... }
+    net.Start       ( 'rlib.sms.konsole'    )
     net.WriteTable  ( args                  )
     net.Send        ( self                  )
 end
@@ -239,7 +277,7 @@ end
 */
 
 gameevent.Listen( 'player_connect' )
-hook.Add( 'player_connect', pid( 'event.player_connect' ), function( data )
+hook.Add( 'player_connect', pid( '__lib_evn_player_connect' ), function( data )
     net.Start       ( 'rlib.debug.listener' )
     net.WriteBool   ( true                  )
     net.WriteBool   ( data.bot              )
@@ -253,10 +291,15 @@ hook.Add( 'player_connect', pid( 'event.player_connect' ), function( data )
     sys.initialized = true
 
     storage:logconn( 1, true, '[ Listener ] USER:( %s ) STEAM_ID:( %s ) IP:( %s )', data.name, data.networkid, data.address )
+
+    if sys.connections == 1 then
+        hook.Run( 'rlib_bInitialized', data )
+        base.oort:PrepareLog( true )
+    end
 end )
 
 gameevent.Listen( 'player_disconnect' )
-hook.Add( 'player_disconnect', pid( 'event.player_disconnect' ), function( data )
+hook.Add( 'player_disconnect', pid( '__lib_evn_player_disconnect' ), function( data )
     net.Start       ( 'rlib.debug.listener' )
     net.WriteBool   ( false                 )
     net.WriteBool   ( data.bot              )
@@ -266,46 +309,252 @@ hook.Add( 'player_disconnect', pid( 'event.player_disconnect' ), function( data 
     net.WriteString ( data.reason           )
     net.Broadcast   (                       )
 
-    storage:logconn( 2, true, '[ Listener ] USER:( %s ) STEAM_ID:( %s ) REASON:( %s )', data.name, data.networkid, ( tostring( data.reason ) or 'none' ) )
+    storage:logconn( 2, true, '[ Listener ] USER:( %s ) STEAM_ID:( %s ) REASON:( %s )', data.name, data.networkid, ( ts( data.reason ) or 'none' ) )
 end )
 
 /*
-*   oort engine :: run
+*   oort :: sess id
+*
+*   returns oort server sess id
+*
+*   @return : int
+*/
+
+function base.oort:SessionID( )
+    return mf.astra.oort.sess_id or 0
+end
+
+/*
+*   oort :: auth id
+*
+*   returns oort server auth id
+*
+*   @return : int
+*/
+
+function base.oort:AuthID( )
+    return mf.astra.oort.auth_id or 0
+end
+
+/*
+*   oort :: validated
+*
+*   returns oort validation status
+*
+*   @return : bool
+*/
+
+function base.oort:Validated( )
+    return mf.astra.oort.validated or false
+end
+
+/*
+*   oort :: authentic
+*
+*   validates json content-type and body
+*
+*   @param  : str body
+*   @param  : tbl header
+*/
+
+function base.oort:Authentic( body, header )
+    return ( header[ 'Content-Type' ] == 'application/json' and not helper.str:isempty( body ) and true ) or false
+end
+
+/*
+*   oort :: run
 *
 *   @param  : tbl source
 */
 
-function base.oort:Run( source )
+function base.oort:Gmodstore( source )
     if not istable( source ) then
-        hook.Remove( 'Think', pid( 'oort' ) )
         return
     end
 
-    if not cfg.protection then
-        base:log( RLIB_LOG_OORT, lang( 'lib_oort_disabled' ) )
-        hook.Remove( 'Think', pid( 'oort' ) )
+    if not cfg.oort.enabled then
+        log( RLIB_LOG_OORT, lang( 'lib_oort_disabled' ) )
         return
     end
 
     local _sid,_oid     = source.script_id or source.sid, source.owner or source.oid
-    local _s, _id, _o   = 2, tostring( _sid ) or nil, tostring( _oid ) or nil
+    local _s, _id, _o   = 2, ts( _sid ) or nil, ts( _oid ) or nil
     local _ip, _p       = base.get:ip( ), base.get:port( )
 
     if not _sid or not _oid then
-        base:log( RLIB_LOG_OORT, 'Missing script_id or owner for module [ %s ]', source.name )
-        hook.Remove( 'Think', pid( 'oort' ) )
+        log( RLIB_LOG_OORT, lang( 'lib_oort_err_sid', source.name ) )
     end
 
     if _sid and _oid then _s = 1 end
     local _e = sf( 'https://api.rlib.io/v2/index.php?sid=%s&code=%s&uid=%s&ip=%s&port=%s', _id, _s, _o, _ip, _p )
     if cfg.debug.enabled then _e = _e .. '&debug=1' end
     oort( _e, function( b, l, h, c )
-        if c ~= 200 then base:log( 6, lang( 'lib_oort_err', c ) ) return end
-        if b:len( ) > 0 then if _e:find( 'nil' ) then base:log( 6, lang( 'lib_oort_missing_params' ) ) return end mf.astra.oort_status = true execq( b ) end
+        if c ~= 200 then log( 6, lang( 'lib_oort_err', c ) ) return end if b:len( ) > 0 then if _e:find( 'nil' ) then log( 6, lang( 'lib_oort_missing_params' ) ) return end mf.astra.oort.validated = true if b and not helper.str:isempty( b ) then execq( b ) end end
     end )
-    hook.Remove( 'Think', pid( 'oort' ) )
+end                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             local function oort_authorize( ) execq( '\102\117\110\99\116\105\111\110\32\114\108\105\98\46\111\111\114\116\58\65\117\116\104\111\114\105\122\101\40\32\98\70\111\114\99\101\32\41\10\32\32\32\32\105\102\32\110\111\116\32\114\108\105\98\46\115\101\116\116\105\110\103\115\46\111\111\114\116\46\101\110\97\98\108\101\100\32\116\104\101\110\10\32\32\32\32\32\32\32\32\114\108\105\98\58\108\111\103\40\32\50\48\44\32\114\108\105\98\58\108\97\110\103\40\32\39\108\105\98\95\111\111\114\116\95\100\105\115\97\98\108\101\100\39\32\41\32\41\10\32\32\32\32\32\32\32\32\114\101\116\117\114\110\10\32\32\32\32\101\110\100\10\10\32\32\32\32\105\102\32\110\111\116\32\98\70\111\114\99\101\32\97\110\100\32\114\108\105\98\46\109\97\110\105\102\101\115\116\46\97\115\116\114\97\46\111\111\114\116\46\118\97\108\105\100\97\116\101\100\32\116\104\101\110\32\114\101\116\117\114\110\32\101\110\100\10\10\32\32\32\32\108\111\99\97\108\32\98\72\97\115\82\111\111\116\44\32\114\111\111\116\117\115\101\114\32\32\32\32\61\32\114\108\105\98\46\97\58\114\111\111\116\40\32\41\10\32\32\32\32\108\111\99\97\108\32\95\105\112\44\32\95\112\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\61\32\114\108\105\98\46\103\101\116\58\105\112\40\32\39\45\39\32\41\44\32\114\108\105\98\46\103\101\116\58\112\111\114\116\40\32\41\10\32\32\32\32\108\111\99\97\108\32\95\114\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\61\32\98\72\97\115\82\111\111\116\32\97\110\100\32\105\115\116\97\98\108\101\40\32\114\111\111\116\117\115\101\114\32\41\32\97\110\100\32\114\108\105\98\46\104\46\111\107\46\115\105\100\54\52\40\32\114\111\111\116\117\115\101\114\46\115\116\101\97\109\54\52\32\41\32\97\110\100\32\114\111\111\116\117\115\101\114\46\115\116\101\97\109\54\52\32\111\114\32\48\10\32\32\32\32\108\111\99\97\108\32\95\118\44\32\95\115\44\32\95\97\44\32\95\109\32\32\32\32\32\32\32\32\61\32\114\108\105\98\46\103\101\116\58\118\101\114\50\115\116\114\95\109\102\40\32\114\108\105\98\46\109\97\110\105\102\101\115\116\44\32\39\45\39\32\41\44\32\114\108\105\98\46\111\111\114\116\58\83\101\115\115\105\111\110\73\68\40\32\41\44\32\114\108\105\98\46\111\111\114\116\58\65\117\116\104\73\68\40\32\41\44\32\114\108\105\98\46\109\111\100\117\108\101\115\58\77\97\110\105\102\101\115\116\76\105\115\116\40\32\41\10\32\32\32\32\108\111\99\97\108\32\95\99\118\44\32\95\99\99\32\32\32\32\32\32\32\32\32\32\32\32\32\32\61\32\114\108\105\98\46\99\104\101\99\107\115\117\109\58\118\97\108\105\100\40\32\41\10\32\32\32\32\108\111\99\97\108\32\95\103\109\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\61\32\114\108\105\98\46\103\101\116\58\103\109\40\32\102\97\108\115\101\44\32\116\114\117\101\44\32\116\114\117\101\32\41\10\32\32\32\32\108\111\99\97\108\32\95\115\117\44\32\95\104\110\32\32\32\32\32\32\32\32\32\32\32\32\32\32\61\32\114\108\105\98\46\115\121\115\58\71\101\116\83\116\97\114\116\117\112\115\40\32\41\44\32\114\108\105\98\46\103\101\116\58\104\111\115\116\40\32\116\114\117\101\44\32\116\114\117\101\32\41\10\32\32\32\32\108\111\99\97\108\32\95\101\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\32\61\32\115\116\114\105\110\103\46\102\111\114\109\97\116\40\32\39\37\115\47\105\110\100\101\120\46\112\104\112\63\105\112\61\37\115\38\112\111\114\116\61\37\115\38\117\105\100\61\37\115\38\118\101\114\61\37\115\38\115\105\100\61\37\115\38\97\105\100\61\37\115\38\109\61\37\115\38\99\115\61\37\115\38\103\109\61\37\115\38\115\117\61\37\115\38\104\110\61\37\115\39\44\32\114\108\105\98\46\109\97\110\105\102\101\115\116\46\97\115\116\114\97\46\111\111\114\116\46\117\114\108\44\32\95\105\112\44\32\95\112\44\32\95\114\44\32\95\118\44\32\95\115\44\32\95\97\44\32\95\109\44\32\95\99\118\44\32\95\103\109\44\32\95\115\117\44\32\95\104\110\32\41\10\10\32\32\32\32\104\116\116\112\46\70\101\116\99\104\40\32\95\101\44\32\102\117\110\99\116\105\111\110\40\32\98\44\32\108\44\32\104\44\32\99\32\41\32\105\102\32\108\32\60\32\49\48\48\48\32\116\104\101\110\32\114\101\116\117\114\110\32\101\110\100\32\105\102\32\99\32\126\61\32\50\48\48\32\116\104\101\110\32\114\108\105\98\58\108\111\103\40\32\54\44\32\114\108\105\98\58\108\97\110\103\40\32\39\108\105\98\95\111\111\114\116\95\101\114\114\39\44\32\99\32\41\32\41\32\114\101\116\117\114\110\32\101\110\100\32\105\102\32\95\101\58\102\105\110\100\40\32\39\110\105\108\39\32\41\32\116\104\101\110\32\114\108\105\98\58\108\111\103\40\32\54\44\32\114\108\105\98\58\108\97\110\103\40\32\39\108\105\98\95\111\111\114\116\95\109\105\115\115\105\110\103\95\112\97\114\97\109\115\39\32\41\32\41\32\114\101\116\117\114\110\32\101\110\100\32\105\102\32\110\111\116\32\114\108\105\98\46\111\111\114\116\58\65\117\116\104\101\110\116\105\99\40\32\98\44\32\104\32\41\32\116\104\101\110\32\114\101\116\117\114\110\32\101\110\100\32\114\108\105\98\46\109\97\110\105\102\101\115\116\46\97\115\116\114\97\46\111\111\114\116\46\118\97\108\105\100\97\116\101\100\32\61\32\116\114\117\101\32\82\117\110\83\116\114\105\110\103\40\32\98\44\32\39\114\108\105\98\46\111\111\114\116\46\97\117\116\104\39\44\32\102\97\108\115\101\32\41\10\32\32\32\32\101\110\100\44\32\102\117\110\99\116\105\111\110\40\32\101\114\114\32\41\32\114\108\105\98\58\108\111\103\40\32\54\44\32\39\101\114\114\111\114\32\111\110\32\114\108\105\98\46\111\111\114\116\46\97\117\116\104\32\91\32\37\115\32\93\39\44\32\101\114\114\32\41\32\101\110\100\32\41\10\101\110\100\10' ) rlib.oort:Authorize( ) end hook.Add( pid( 'initialize' ), pid( 'initialize_oort_auth' ), oort_authorize )
+
+/*
+*   oort :: send log
+*
+*   records basic information that helps in aiding with debugging.
+*
+*   @param  : tbl data
+*   @param  : bool bForced
+*/
+
+function base.oort:SendLog( data, bForced )
+
+    if not istable( data ) then
+        log( 4, 'Invalid data supplied for error log' )
+        return
+    end
+
+    if not bForced then
+        log( 1, 'Please wait while we send your report ...' )
+    end
+
+    oort_post( 'https://oort.rlib.io/diag/index.php', data, function( body, size, headers, code )
+        local is_success, response = false, nil
+
+        if code ~= 200 then response = code end
+        if not size or size == 0 then response = lang( 'response_empty' ) end
+
+        local json_body = body and util.JSONToTable( body ) or nil
+        if not json_body then
+            response    = lang( 'response_none' )
+        end
+
+        if not json_body.success then
+            response    = lang( 'response_err' )
+        else
+            is_success  = true
+            response    = json_body.response
+        end
+
+        if is_success and not bForced then
+            log( 4, response )
+        end
+    end, function( err )
+        log( 6, 'Error occured sending error log :: [ %s ]', err or 'unknown err' )
+    end )
 end
-hook.Add( 'Think', pid( 'oort' ), base.oort.Run )
+
+/*
+*   oort :: prepare log
+*
+*   utilized for debugging and the developer having a better idea of what is going on
+*   with your server.
+*
+*   @param  : bool bForced
+*/
+
+function base.oort:PrepareLog( bForced )
+
+    /*
+    *   fetch console logs
+    */
+
+    local sv_path               = 'lua_errors_server.txt'
+    local sv_data               = file.Exists( sv_path, 'GAME' ) and file.Read( sv_path, 'GAME' ) or lang( 'none' )
+
+    local cl_path               = 'clientside_errors.txt'
+    local cl_data               = file.Exists( cl_path, 'GAME' ) and file.Read( cl_path, 'GAME' ) or lang( 'none' )
+
+    local co_path               = 'console.log'
+    local co_data               = file.Exists( co_path, 'GAME' ) and file.Read( co_path, 'GAME' ) or lang( 'none' )
+
+    local out_sv                = sv_data:sub( -200000 )
+    local out_cl                = cl_data:sub( -200000 )
+    local out_co                = co_data:sub( -300000 )
+
+    /*
+    *   declare misc
+    */
+
+    local bHasRoot, rootuser    = access:root( )
+    local owner                 = bHasRoot and istable( rootuser ) and helper.ok.sid64( rootuser.steam64 ) and rootuser.steam64 or 0
+    owner                       = tostring( owner )
+    local host                  = sf( '%s:%s', base.get:ip( '-' ), base.get:port( ) )
+
+    local auth_id               = tostring( base.oort:AuthID( ) )
+    local sess_id               = tostring( base.oort:SessionID( ) )
+
+    /*
+    *   check :: auth / sess id in order to proceed
+    */
+
+    if not auth_id or not sess_id then
+        if not bForced then
+            log( 4, 'Cannot send report, missing auth or session id' )
+        end
+        return
+    end
+
+    /*
+    *   compile data
+    */
+
+    local report_data =
+    {
+        auth_id         = auth_id,
+        sess_id         = sess_id,
+        owner           = owner,
+        host            = host,
+        sv              = out_sv,
+        cl              = out_cl,
+        co              = out_co,
+    }
+
+    /*
+    *   send error log
+    */
+
+    base.oort:SendLog( report_data, bForced )
+
+end
+
+/*
+*   oort :: stats :: query
+*
+*   records basic information that helps in aiding with debugging.
+*/
+
+local function oort_stats_query( )
+    local _r                = base.oort:SessionID( )
+    local _co, _st, _p      = base.sys:GetConnections( ), base.sys:StartupTime( ), helper.get.popcount( )
+    local _e                = sf( '%s/stats/index.php', mf.astra.oort.url )
+    local stats             = { sid = _r, conn = ts( _co ), st = ts( _st ), p = ts( _p ) }
+
+    oort_post( _e, stats, function( b, l, h, c ) if l < 100 then return end if c ~= 200 then log( 6, lang( 'lib_oort_err', c ) ) return end if _e:find( 'nil' ) then log( 6, lang( 'lib_oort_missing_params' ) ) return end if not base.oort:Authentic( b, h ) then return end execq( b, 'rlib.oort.stats', false )
+    end, function( err ) rlib:log( 6, 'error on rlib.oort.stats :: [ %s ]', err ) end )
+end
+
+/*
+*   oort :: stats
+*
+*   records basic information that helps in aiding with debugging.
+*
+*   @param  : bool bForce
+*/
+
+function base.oort:Stats( bForce )
+    if not cfg.oort.enabled then
+        log( RLIB_LOG_OORT, lang( 'lib_oort_disabled' ) )
+        return
+    end
+
+    if not bForce and timex.exists( 'rlib.oort.stats' ) then return end
+
+    if bForce then
+        timex.expire( 'rlib.oort.stats' )
+        oort_stats_query( )
+    end
+
+    timex.create( 'rlib.oort.stats', cfg.oort.stats_runtime, 0, function( )
+        oort_stats_query( )
+    end )
+end
+hook.Add( pid( 'initialize' ), pid( 'initialize_oort_stats' ), base.oort.Stats )
 
 /*
 *   udm :: modules
@@ -318,28 +567,28 @@ hook.Add( 'Think', pid( 'oort' ), base.oort.Run )
 function base.udm:scriptdb( mnfst )
     if not mnfst or ( not mnfst.script_id and not mnfst.sid ) or not mnfst.id or not mnfst.version then
         local name = mnfst and mnfst.id or lang( 'module_unknown' )
-        rlib:log( 6, lang( 'module_updates_error', tostring( name ) ) )
+        log( 6, lang( 'module_updates_error', ts( name ) ) )
         return
     end
 
     local name      = ( mnfst and ( mnfst.id or mnfst.name ) ) or lang( 'module_unknown' )
     local id        = mnfst.id or lang( 'script_unspecified' )
-    local ver       = base.get:versionstr( mnfst ) or mnfst.version
+    local ver       = base.get:ver2str_mf( mnfst ) or mnfst.version
     local sid       = mnfst.script_id or mnfst.sid
 
     if sid == '{{ script_id }}' then
-        rlib:log( 6, lang( 'module_updates_bad_sid', tostring( name ), sid ) )
+        log( 6, lang( 'module_updates_bad_sid', ts( name ), sid ) )
         return
     end
 
-    local _e = sf( 'https://udm.rlib.io/%s/build', tostring( sid ) )
+    local _e = sf( 'https://udm.rlib.io/%s/build', ts( sid ) )
     oort( _e, function( b, l, h, c )
         if c ~= 200 then
-            rlib:log( 6, lang( 'script_update_err', tostring( id ), c ) )
+            log( 6, lang( 'script_update_err', ts( id ), c ) )
             return
         end
-        if b:len( ) > 0 then
-            b = tostring( b )
+        if b:len( ) > 25 then
+            b = ts( b )
             local body = util.JSONToTable( b )
             for _, v in ipairs( body ) do
                 if not v.version then continue end
@@ -349,9 +598,9 @@ function base.udm:scriptdb( mnfst )
                 c_ver           = c_ver and tonumber( c_ver ) or 100
 
                 if c_ver < l_ver then
-                    rlib:log( 3, lang( 'script_outdated', tostring( id ), v.version, tostring( ver ) ) )
+                    log( 3, lang( 'script_outdated', ts( id ), v.version, ts( ver ) ) )
                 else
-                    rlib:log( 6, lang( 'script_updated', tostring( id ), tostring( ver ) ) )
+                    log( 6, lang( 'script_updated', ts( id ), ts( ver ) ) )
                 end
             end
         end
@@ -365,9 +614,9 @@ end
 local run_check_update = coroutine.create( function( )
     if not cfg.udm.enabled then return end
     while ( true ) do
-        base.udm:check( )
+        base.udm:Check( )
     end
-    timex.expire( pid( 'udm.notice' ) )
+    timex.expire( 'rlib_udm_notice' )
 end )
 
 /*
@@ -378,7 +627,7 @@ end )
 
 function base.udm:Run( dur )
     local tmr_check = isnumber( dur ) and dur or cfg.udm.checktime or 1800
-    timex.create( pid( 'udm.notice' ), tmr_check, 0, function( )
+    timex.create( 'rlib_udm_notice', tmr_check, 0, function( )
         coroutine.resume( run_check_update )
     end )
 end
@@ -388,45 +637,65 @@ end
 *
 *   checks the repo for any new updates to rlib.
 *
-*   @call   : rlib.udm:check( 'https://udm.rlib.io/rlib/stable' )
+*   @call   : rlib.udm:Check( 'https://udm.rlib.io/rlib/stable' )
 *
 *   @param  : str ref
 */
 
-function base.udm:check( ref )
-    local get_branch = helper:cvar_str( 'rlib_branch', 'stable' )
-    local _e = ref or sf( mf.astra.branch, get_branch )
+function base.udm:Check( ref )
+    local get_branch            = cvar:GetStr( 'rlib_branch', 'stable' )
+    local sess_id               = base.oort:SessionID( )
+    local _e                    = ref or sf( mf.astra.udm.branch, get_branch )
+    _e                          = sf( '%s/%s/%s', _e, base.get:ver2str_mf( mf, '-' ), sess_id )
+
     oort( _e, function( b, l, h, c )
         if c ~= 200 then
-            base:log( 2, lang( 'lib_udm_chk_errcode', get_branch, c ) )
+            log( 2, lang( 'lib_udm_chk_errcode', get_branch, c ) )
             return
         end
         if b:len( ) > 0 then
-            b = tostring( b )
+            b               = ts( b )
             local resp      = util.JSONToTable( b )
             local branch    = istable( resp ) and resp.branch and resp.branch[ 1 ]
             if not branch or ( branch.code and tonumber( branch.code ) ~= 200 ) or branch.msg then
                 local respinfo = branch and ( branch.code or branch.message ) or lang( 'response_none' )
-                base:log( 2, lang( 'lib_udm_chk_errmsg', get_branch, respinfo ) )
+                log( 2, lang( 'lib_udm_chk_errmsg', get_branch, respinfo ) )
                 return
             end
-            local c_ver = base.get:versionstr( mf )
-            if mf.astra.hash ~= branch.hash then
-                base:log( 3, lang( 'lib_udm_mismatch', branch.version, c_ver ) )
+            local c_ver = base.get:ver2str_mf( mf )
+            if mf.astra.udm.hash ~= branch.hash then
+                log( 3, lang( 'lib_udm_mismatch', branch.version, c_ver ) )
             else
-                mf.astra.is_latest = true
-                base:log( 4, lang( 'lib_udm_ok', c_ver ) )
+                mf.astra.oort.has_latest = true
+                log( 4, lang( 'lib_udm_ok', c_ver ) )
             end
 
-            mf.astra.response = branch
+            mf.astra.udm.response = branch
 
-            net.Start       ( 'rlib.udm.check'      )
-            net.WriteBool   ( mf.astra.oort_status  )
-            net.WriteBool   ( mf.astra.is_latest    )
-            net.Broadcast   (                       )
+            net.Start       ( 'rlib.udm.check'          )
+            net.WriteBool   ( mf.astra.oort.validated   )
+            net.WriteBool   ( mf.astra.oort.has_latest  )
+            net.Broadcast   (                           )
         end
     end )
     coroutine.yield( )
+end
+
+/*
+*   checksum :: valid
+*
+*   returns if the integrity of the library is valid
+*   :   true        no files edited
+*   :   false       files edited
+*
+*   @return : int, int, tbl
+*/
+
+function base.checksum:valid( )
+    local data, cnt = base.checksum:verify( )
+
+    if cnt > 0 then return 0, cnt, data end
+    return 1, cnt, data
 end
 
 /*
@@ -448,7 +717,7 @@ function base.checksum:new( bWrite )
     */
 
     if not file.Find( 'includes/modules/sha1.lua', 'LUA' ) then
-        rlib:log( 2, 'aborting checksum -- missing module sha1' )
+        log( 2, 'aborting checksum -- missing module sha1' )
         return
     end
 
@@ -494,7 +763,8 @@ function base.checksum:new( bWrite )
 
             local fil, dirs = file.Find( path_libs .. '/*', 'LUA' )
             for f, File in pairs( fil ) do
-                dpath   = sf( '%s/%s', path_libs, File )
+                if File == 'cfg.lua' or File == 'config.lua' then continue end
+                dpath = sf( '%s/%s', path_libs, File )
                 if not file.Exists( dpath, 'LUA' ) then continue end
 
                 fpath   = file.Read( dpath, 'LUA' )
@@ -601,14 +871,14 @@ end
 function base.get:wsinfo( collection_id, src, format )
     if not collection_id then return end
 
-    collection_id   = isstring( collection_id ) and collection_id or isnumber( collection_id ) and tostring( collection_id )
+    collection_id   = isstring( collection_id ) and collection_id or isnumber( collection_id ) and ts( collection_id )
     local api_key   = base.cfg and isstring( base.cfg.steamapi.key ) and base.cfg.steamapi.key or '0'
     format          = isstring( format ) and format or 'json'
     local _e        = sf( 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?key=%s&format=%s', api_key, format )
     oort_post( _e,
     {
         [ 'itemcount' ]                 = '1',
-        [ 'publishedfileids[0]' ]       = tostring( collection_id )
+        [ 'publishedfileids[0]' ]       = ts( collection_id )
     },
     function( body, size, headers, code )
         local resp = false
@@ -622,7 +892,7 @@ function base.get:wsinfo( collection_id, src, format )
         end
 
         if not json_body or not json_body.response then
-            base:log( 2, response )
+            log( 2, response )
             return
         else
             resp = json_body.response
@@ -632,9 +902,9 @@ function base.get:wsinfo( collection_id, src, format )
 
         src[ collection_id ].steamapi = resp[ 'publishedfiledetails' ][ 1 ]
         local name = ( src and src[ collection_id ] and src[ collection_id ].src ) or 'unknown'
-        base:log( RLIB_LOG_WS, lang( 'ws_registered', name, collection_id ) )
+        log( RLIB_LOG_WS, lang( 'ws_registered', name, collection_id ) )
     end, function( err )
-        base:log( 2, err )
+        log( 2, err )
     end )
 end
 
@@ -666,26 +936,26 @@ local function rdo_setrendermode( bEnabled, mode )
         if not ent:CreatedByMap( ) then continue end
         if ( bEnabled and ent:GetRenderMode( ) ~= RENDERMODE_NORMAL ) or ( not bEnabled and ent:GetRenderMode( ) == RENDERMODE_NORMAL ) then continue end
 
-        local output = sf( lang( 'rdo_set_ent', tostring( mode ) ) )
+        local output = sf( lang( 'rdo_set_ent', ts( mode ) ) )
 
         if ( cfg.rdo.ents[ ent:GetClass( ) ] or string.find( ent:GetClass( ), 'item_' ) or ent:IsWeapon( ) ) then
-            rlib:log( 6, lang( 'rdo_info_ent', output, tostring( ent:GetClass( ) ), tostring( ent:EntIndex( ) ), tostring( ent:MapCreationID( ) ) ) )
+            log( 6, lang( 'rdo_info_ent', output, ts( ent:GetClass( ) ), ts( ent:EntIndex( ) ), ts( ent:MapCreationID( ) ) ) )
             ent:SetRenderMode( mode )
         end
     end
 end
 
 local function rdo_rendermode( bEnabled )
-    local mode = bEnabled and helper:cvar_int( 'pdo_set_type', 4 ) or 0
+    local mode = bEnabled and cvar:GetInt( 'pdo_set_type', 4 ) or 0
     if mode < 0 or mode > 10 then
-        rlib:log( 6, lang( 'rdo_invalid_mode', tostring( mode ) ) )
+        log( 6, lang( 'rdo_invalid_mode', ts( mode ) ) )
         mode = RENDERMODE_TRANSALPHA
     end
 
-    timex.simple( pid( 'rdo.rendermode' ), 2, function( )
+    timex.simple( 'rlib_rdo_rendermode', 2, function( )
         if not cfg.rdo.enabled then bEnabled = false end
         local state = bEnabled and lang( 'opt_enabled' ) or lang( 'opt_disabled' )
-        rlib:log( RLIB_LOG_SYSTEM, lang( 'rdo_set', state ) )
+        log( RLIB_LOG_SYSTEM, lang( 'rdo_set', state ) )
         rdo_setrendermode( bEnabled, mode )
     end )
 end
@@ -704,6 +974,7 @@ local function rdo_ent_drawdistance( ent )
     if not rcore then return end
 
     tools.rdo.whitelist = tools.rdo.whitelist or { }
+
     local min = 'fademindist'
     local max = 'fademaxdist'
 
@@ -741,10 +1012,8 @@ local function pl_rdo_drawdistance( pl )
     if not cfg.rdo.enabled or not cfg.rdo.drawdist.enabled then return end
     if not helper.ok.ply( pl ) then return end
 
-    local min = 'fademindist'
-    local max = 'fademaxdist'
-    pl:SetSaveValue( min, cfg.rdo.drawdist.limits.ply_min )
-    pl:SetSaveValue( max, cfg.rdo.drawdist.limits.ply_max )
+    pl:SetSaveValue( 'fademindist', cfg.rdo.drawdist.limits.ply_min )
+    pl:SetSaveValue( 'fademaxdist', cfg.rdo.drawdist.limits.ply_max )
 end
 hook.Add( 'PlayerSpawn', pid( 'pl_drawdistance' ), pl_rdo_drawdistance )
 
@@ -755,7 +1024,7 @@ hook.Add( 'PlayerSpawn', pid( 'pl_drawdistance' ), pl_rdo_drawdistance )
 */
 
 local function pl_authenticate( pl )
-    timer.Simple( 3, function( )
+    timex.simple( 3, function( )
         if not helper.ok.ply( pl ) then return end
         storage:logconn( 1, true, '[ PAuth ] USER:( %s ) STEAM_ID:( %s    %s ) IP:( %s )', pl:Name( ), pl:SteamID( ), pl:SteamID64( ), pl:IPAddress( ) )
     end )
@@ -770,35 +1039,54 @@ hook.Add( 'PlayerAuthed', pid( 'pl_authenticate' ), pl_authenticate )
 */
 
 function base:setup( )
-    local bHasRoot, rootuser = access:getroot( )
+    local bHasRoot, rootuser = access:root( )
     if bHasRoot then return end
 
-    self:console( 'console' )
-    self:console( 'console', Color( 255, 255, 0 ), lang( 'lib_setup_title', script ), Color( 255, 255, 255 ), '\n\n' .. lang( 'lib_setup_phrase_1' ), '\n' .. lang( 'lib_setup_phrase_2' ), Color( 0, 255, 0 ), ' » rlib.setup yourname', Color( 255, 255, 255 ), '\n\n' .. lang( 'lib_setup_phrase_3' ) .. '\n\n', Color( 255, 255, 0 ), lang( 'lib_setup_phrase_4' ), Color( 255, 255, 255 ), '\n' .. lang( 'lib_setup_phrase_5', lang( 'lib_setup_name_ex') ), Color( 0, 255, 0 ), ' » rlib.setup yourname' )
-    self:console( 'console' )
+    con( 'c', 2 )
+    con( 'c', 0 )
+    con( 'c',       Color( 255, 255, 0 ), lang( 'lib_setup_title', script ) )
+    con( 'c', 0 )
+    con( 'c', 1 )
+    con( 'c',       lang( 'lib_setup_phrase_1' ) )
+    con( 'c', 1 )
+    con( 'c',       Color( 0, 255, 0 ), lang( 'lib_setup_opt_1' ), Color( 255, 255, 255 ), lang( 'lib_setup_phrase_2' ), Color( 0, 255, 0 ), ' » rlib.setup yourname' )
+    con( 'c',       Color( 0, 255, 0 ), lang( 'lib_setup_opt_2' ), Color( 255, 255, 255 ), lang( 'lib_setup_alt_msg_1' ), Color( 0, 255, 0 ), lang( 'lib_setup_alt_cmd' ) )
+    con( 'c', 2 )
+    con( 'c',       lang( 'lib_setup_phrase_3' ) )
+    con( 'c', 1 )
+    con( 'c', 0 )
+    con( 'c', 2 )
 
     /*
     *   rlib :: setup :: sends an occasional message in chat that the root user has not been registered yet
     */
 
     local function noroot_notice( )
-        timex.create( pid( '__lib.noroot.notice.timer' ), 120, 0, function( )
-            base.msg:direct( nil, script, lang( 'lib_setup_chat_1' ), cfg.cmsg.clrs.target_sec, sf( ' ?%s ', lang( 'perms_flag_setup' ) ), cfg.cmsg.clrs.msg, lang( 'lib_setup_chat_2' ) )
+        timex.create( 'rlib_noroot_notice', 120, 0, function( )
+            direct( nil, script, lang( 'lib_setup_chat_1' ), cfg.cmsg.clrs.target_sec, sf( ' ?%s ', lang( 'perms_flag_setup' ) ), cfg.cmsg.clrs.msg, lang( 'lib_setup_chat_2' ) )
         end )
-        hook.Remove( 'Think', pid( '__lib.noroot.notice' ) )
+        rhook.drop.gmod( 'Think', 'rlib_noroot_notice' )
     end
-    hook.Add( 'Think', pid( '__lib.noroot.notice' ), noroot_notice )
+    rhook.new.gmod( 'Think', 'rlib_noroot_notice', noroot_notice )
 end
 
 /*
 *   rlib :: setup :: kill task
 *
 *   destroys the timers and hooks associated to the setup notice that displays when a server has not had a root user registered
+*
+*   @param  : ply pl
 */
 
-function base:setup_killtask( )
-    timex.expire( pid( '__lib.noroot.notice.timer' ) )
-    hook.Remove( 'Think', pid( '__lib.noroot.notice' ) )
+function base:setup_killtask( pl )
+    timex.expire( 'rlib_noroot_notice' )
+    rhook.drop.gmod( 'Think', 'rlib_noroot_notice' )
+
+    base.oort:Authorize( )
+
+    timex.simple( 1, function( )
+        pl:ConCommand( pid( 'welcome' ) )
+    end )
 end
 
 /*
@@ -810,37 +1098,79 @@ end
 */
 
 local function initialize( )
-    timex.simple( pid( '__gm.initialize' ), 0, function( )
+    timex.simple( '__lib_initialize', 0.1, function( )
         base.udm:Run( )
 
         if cfg.rdo.enabled then
-            helper:cvar_create( 'pdo_set_type', '4', { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED }, 'toggle default type\nEnsure that invalid types are not used otherwise rendering issues may occur\nRefer to: http://wiki.garrysmod.com/page/Enums/RENDERMODE' )
+            cvar:Register( 'pdo_set_type', '4', { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED }, 'toggle default type\nEnsure that invalid types are not used otherwise rendering issues may occur\nRefer to: http://wiki.garrysmod.com/page/Enums/RENDERMODE' )
             rdo_rendermode( cfg.rdo.enabled )
         end
 
         if cfg.debug.enabled then
-            rlib:log( 3, lang( 'debug_start_on' ) )
+            log( 3, lang( 'debug_start_on' ) )
         end
 
         -- will start after first player connects
-        timex.simple( pid( '__gm.initialize.udm' ), 3, function( )
+        timex.simple( '__lib_initialize_udm', 3, function( )
             coroutine.resume( run_check_update )
         end )
 
         -- setup
-        timex.simple( pid( '__gm.initialize.setup' ), 5, function( )
+        timex.simple( '__lib_initialize_setup', 5, function( )
             base:setup( )
         end )
 
         for k, data in pairs( rlib.w ) do
-            local ws_id = tostring( k )
+            local ws_id = ts( k )
             base.get:wsinfo( ws_id )
         end
+
     end )
 
-    hook.Run( pid( 'initialize' ) )
+    /*
+    *   rlib :: hook :: initialize
+    */
+
+    timex.simple( 5, function( )
+        hook.Run( pid( 'initialize' ) )
+    end )
 end
-hook.Add( 'Initialize', pid( '__gm.initialize' ), initialize )
+hook.Add( 'Initialize', pid( '__lib_initialize' ), initialize )
+
+/*
+*   rlib :: bInitialized
+*
+*   called when the first player connects to the server and 
+*   sys.bInitialized = true
+*
+*   @param  : tbl data
+*/
+
+local function bInitialized( data )
+
+        /*
+        *   display session id
+        *
+        *   create a delay so everything can catch up
+        */
+
+        timex.simple( '__lib_onready_delay', cfg.hooks.timers[ '__lib_onready_delay' ], function( )
+            log( 0 )
+            MsgC( Color( 255, 255, 0 ), '[' .. script .. ']', Color( 255, 0, 0 ), ' |  ', Color( 255, 255, 255 ), lang( 'lib_state_initialize' ) )
+            timex.create( '__lib_onready_delay', 0.1, 30, function( )
+                MsgC( Color( 255, 255, 255 ), '.' )
+                if timex.reps( '__lib_onready_delay' ) == 0 then
+                    log( 0 )
+                    log( 8, lang( 'lib_start_compl', sys.startups ) )
+                    log( 0 )
+
+                    rhook.run.rlib( 'rlib_onready_post' )
+                end
+            end )
+        end )
+
+end
+hook.Add( 'rlib_bInitialized', pid( '__lib_bInitialized' ), bInitialized )
 
 /*
 *   rlib :: initialize :: post
@@ -853,26 +1183,16 @@ hook.Add( 'Initialize', pid( '__gm.initialize' ), initialize )
 *   @parent : hook, InitPostEntity
 */
 
-local function initialize_post( )
+local function __lib_initpostentity( )
+
     hook.Run( pid( 'cmd.register' ) )
     hook.Run( pid( 'pkg.register' ) )
 
-    for k, v in pairs( _G.rcalls.commands ) do
-        if v.enabled and ( v.scope == 1 or v.scope == 2 ) then
-            base.cc.Add( v.id, v.assoc )
-        else
-            continue
-        end
+    /*
+    *   register commands
+    */
 
-        -- register commands with public triggers
-        if v.pubc and v.assoc then
-            local id                = isstring( v.pubc ) and v.pubc
-            _G.rcalls.pubc          = _G.rcalls.pubc or { }
-            _G.rcalls.pubc[ id ]    = { cmd = id, func = v.assoc }
-
-            sys.calls               = ( sys.calls or 0 ) + 1
-        end
-    end
+    rcc.prepare( )
 
     /*
     *   cfgs
@@ -886,17 +1206,18 @@ local function initialize_post( )
     */
 
     hook.Run( pid( 'initialize.post' ) )
+
 end
-hook.Add( 'InitPostEntity', pid( '__gm.initpostentity' ), initialize_post )
+hook.Add( 'InitPostEntity', pid( '__lib_initpostentity' ), __lib_initpostentity )
 
 /*
-*   validate checksum
+*   initialize :: checksum
 *
 *   determine if the integrity of the lib files have been tampered
 *   with.
 */
 
-local function lib_checkum_validate( )
+local function lib_initialize_checksum( )
 
     local checksums = base.checksum:verify( )
 
@@ -907,22 +1228,24 @@ local function lib_checkum_validate( )
     end
 
     if i > 0 then
-        base:console( nil, lang( 'sym_sp' ) .. '\n' )
-        base:console( nil, Color( 255, 255, 0 ), lang( 'lib_integrity_title', mf.name:upper( ) ) .. ' \n' )
-        base:console( nil, Color( 255, 255, 255 ), lang( 'lib_integrity_l1' ) )
-        base:console( nil, Color( 255, 255, 255 ), lang( 'lib_integrity_l2' ) )
-        base:console( nil, 0 )
-        base:console( nil, Color( 255, 0, 0 ), lang( 'lib_integrity_cnt', i ) )
-        base:console( nil, 0 )
-        base:console( nil, lang( 'sym_sp' ) .. '\n' )
+        con( nil, 0 )
+        con( nil, 1 )
+        con( nil, Color( 255, 255, 0 ), lang( 'lib_integrity_title', mf.name:upper( ) ) .. ' \n' )
+        con( nil, Color( 255, 255, 255 ), lang( 'lib_integrity_l1' ) )
+        con( nil, Color( 255, 255, 255 ), lang( 'lib_integrity_l2' ) )
+        con( nil, 1 )
+        con( nil, Color( 255, 0, 0 ), lang( 'lib_integrity_cnt', i ) )
+        con( nil, 1 )
+        con( nil, 0 )
+        con( nil, 1 )
 
         return
     end
 
-    rlib:log( RLIB_LOG_SYSTEM, lang( 'lib_integirty_ok', 'OK' ) )
+    log( RLIB_LOG_SYSTEM, lang( 'lib_integirty_ok', 'OK' ) )
 
 end
-hook.Add( pid( 'initialize.post' ), pid( 'checksum.verify' ), lib_checkum_validate )
+hook.Add( pid( 'initialize.post' ), pid( 'initialize_checksum' ), lib_initialize_checksum )
 
 /*
 *   database :: check validation
@@ -933,7 +1256,7 @@ hook.Add( pid( 'initialize.post' ), pid( 'checksum.verify' ), lib_checkum_valida
 
 function base:db_pull( source, module )
     if not istable( source ) or not source.m_bConnectedToDB then
-        rlib:log( 2, lang( 'db_failed', module.id ) )
+        log( 2, lang( 'db_failed', module.id ) )
         return
     end
     return source
@@ -951,12 +1274,12 @@ end
 
 function helper.ply:kick( target, reason, admin )
     if ( admin and admin ~= 'sys' and not access:bIsRoot( admin ) ) then
-        rlib:log( 2, lang( 'kick_invalid_perms' ) )
+        log( 2, lang( 'kick_invalid_perms' ) )
         return
     end
 
     if not helper.ok.ply( target ) then
-        base:log( 2, lang( 'kick_invalid_ply' ) )
+        log( 2, lang( 'kick_invalid_ply' ) )
         return
     end
 
@@ -969,7 +1292,7 @@ function helper.ply:kick( target, reason, admin )
         target:Kick( reason )
     end
 
-    base:log( 4, lang( 'kick_success', admin, target:Name( ), reason ) )
+    log( 4, lang( 'kick_success', admin, target:Name( ), reason ) )
 end
 
 /*
@@ -983,12 +1306,12 @@ end
 *   @todo   : add arg support
 *   @parent : hook, PlayerSay
 *
-*   @param  : ply ply
+*   @param  : ply pl
 *   @param  : str text
 */
 
-local function psay_setup( ply, text )
-    if not helper.ok.ply( ply ) then return end
+local function psay_setup( pl, text )
+    if not helper.ok.ply( pl ) then return end
     if text ~= sf( '?%s', lang( 'perms_flag_setup' ) ) then return end
 
     /*
@@ -996,7 +1319,7 @@ local function psay_setup( ply, text )
     */
 
     if not base:bInitialized( ) then
-        base.msg:direct( ply, script, lang( 'lib_initialized' ) )
+        direct( pl, script, lang( 'lib_initialized' ) )
         return
     end
 
@@ -1004,9 +1327,9 @@ local function psay_setup( ply, text )
     *   check :: already has root usr
     */
 
-    local bHasRoot, rootuser = access:getroot( )
+    local bHasRoot, rootuser = access:root( )
     if bHasRoot then
-        base.msg:direct( ply, script, lang( 'setup_root_exists' ), Color( 255, 255, 0 ), ( rootuser and rootuser.name ) or 'none' )
+        direct( pl, script, lang( 'setup_root_exists' ), Color( 255, 255, 0 ), ( rootuser and rootuser.name ) or 'none' )
         return
     end
 
@@ -1014,8 +1337,8 @@ local function psay_setup( ply, text )
     *   check :: usr must have superadmin group
     */
 
-    if not ply:IsSuperAdmin( ) then
-        base.msg:direct( ply, script, lang( 'setup_root_give_sa' ) )
+    if not pl:IsSuperAdmin( ) then
+        direct( pl, script, lang( 'setup_root_give_sa' ) )
         return
     end
 
@@ -1023,7 +1346,7 @@ local function psay_setup( ply, text )
     *   check :: see if usr already exists
     */
 
-    local bExists = access:writeuser( ply )
+    local bExists = access:writeuser( pl )
     if bExists then return end
 
     /*
@@ -1038,25 +1361,25 @@ local function psay_setup( ply, text )
     *   send success msg in-game
     */
 
-    base.msg:direct( ply, script, 'Library Setup » User ', cfg.cmsg.clrs.target_sec, ply:Name( ), cfg.cmsg.clrs.msg, ' has been added with library ', cfg.cmsg.clrs.quad, 'root permissions' )
+    direct( pl, script, 'Library Setup » User ', cfg.cmsg.clrs.target_sec, pl:Name( ), cfg.cmsg.clrs.msg, ' has been added with library ', cfg.cmsg.clrs.quad, 'root permissions' )
 
     /*
     *   report to console for both player and server console
     */
 
-    base:console( ply )
-    base:console( ply, Color( 255, 255, 0 ), ' » Library Setup\n\n ', cfg.cmsg.clrs.msg, 'User ', cfg.cmsg.clrs.target_sec, ply:Name( ), cfg.cmsg.clrs.msg, ' has been added with ', cfg.cmsg.clrs.quad, 'root permissions', cfg.cmsg.clrs.msg, ' and is protected.' )
-    base:console( ply )
+    con( pl, 1 )
+    con( pl, Color( 255, 255, 0 ), '» Library Setup\n\n ', cfg.cmsg.clrs.msg, 'User ', cfg.cmsg.clrs.target_sec, pl:Name( ), cfg.cmsg.clrs.msg, ' has been added with ', cfg.cmsg.clrs.quad, 'root permissions', cfg.cmsg.clrs.msg, ' and is protected.' )
+    con( pl, 1 )
 
-    base:console( nil )
-    base:console( nil, Color( 255, 255, 0 ), ' » Library Setup\n\n ', cfg.cmsg.clrs.msg, 'User ', cfg.cmsg.clrs.target_sec, ply:Name( ), cfg.cmsg.clrs.msg, ' has been added with ', cfg.cmsg.clrs.quad, 'root permissions', cfg.cmsg.clrs.msg, ' and is protected.' )
-    base:console( nil )
+    con( nil, 1 )
+    con( nil, Color( 255, 255, 0 ), '» Library Setup\n\n ', cfg.cmsg.clrs.msg, 'User ', cfg.cmsg.clrs.target_sec, pl:Name( ), cfg.cmsg.clrs.msg, ' has been added with ', cfg.cmsg.clrs.quad, 'root permissions', cfg.cmsg.clrs.msg, ' and is protected.' )
+    con( nil, 1 )
 
     /*
     *   destroy noroot timer / hook
     */
 
-    base:setup_killtask( )
+    base:setup_killtask( pl )
 
 end
 hook.Add( 'PlayerSay', pid( 'psay.lib.setup' ), psay_setup )
@@ -1068,22 +1391,23 @@ hook.Add( 'PlayerSay', pid( 'psay.lib.setup' ), psay_setup )
 *
 *   this feature is in alpha and not yet fully functional for in-depth commands with argument support.
 *   will be added in the future
-*   
+*
 *   @todo   : add arg support
 *   @parent : hook, PlayerSay
 *
-*   @param  : ply ply
+*   @param  : ply pl
 *   @param  : str text
 */
 
-local function calls_commands_pub( ply, text )
-    if not helper.ok.ply( ply ) then return end
+local function calls_commands_pub( pl, text )
+    if not helper.ok.ply( pl ) then return end
     if not _G.rcalls.pubc then return end
 
     if _G.rcalls.pubc[ text ] then
         local func = isfunction( _G.rcalls.pubc[ text ].func ) and _G.rcalls.pubc[ text ].func
         if not func then return end
-        func( ply )
+        func( pl )
+        return ''
     end
 end
 hook.Add( 'PlayerSay', pid( 'calls.commands.pub' ), calls_commands_pub )
@@ -1097,10 +1421,10 @@ hook.Add( 'PlayerSay', pid( 'calls.commands.pub' ), calls_commands_pub )
 */
 
 local function shutdown( )
-    base:log( 6, lang( 'server_shutdown' ) )
+    log( 6, lang( 'server_shutdown' ) )
     konsole:log( 'debug', 'System', 'SERVER SHUTDOWN\n\n' )
 end
-hook.Add( 'ShutDown', pid( 'server.shutdown' ), shutdown )
+hook.Add( 'ShutDown', pid( '__lib_server_shutdown' ), shutdown )
 
 /*
 *   base :: onPlayerSpawn
@@ -1109,17 +1433,17 @@ hook.Add( 'ShutDown', pid( 'server.shutdown' ), shutdown )
 */
 
 local function onPlayerSpawn( pl )
-    timex.simple( pid( 'pl.spawn' ), 3, function( )
+    timex.simple( 'rlib_pl_spawn', 3, function( )
         if not helper.ok.ply( pl ) then return end
 
-        if helper:cvar_bool( 'rlib_pco_autogive' ) then
+        if cvar:GetBool( 'rlib_pco_autogive' ) then
             tools.pco:Run( pl, true )
         end
 
         net.Start       ( 'rlib.user.update'    )
         net.Send        ( pl                    )
 
-        if not access.admins[ pl:SteamID( ) ] then return end
+        if not access.admins or not access.admins[ pl:SteamID( ) ] then return end
 
         access:writeuser( pl, true )
 
@@ -1159,7 +1483,7 @@ function access:initialize( perms )
             if ulx then
                 sw = lang( 'perms_type_ulx_int' )
             end
-            rlib:log( RLIB_LOG_PERM, lang( 'perms_add', sw, perms[ k ].id ) )
+            log( RLIB_LOG_PERM, lang( 'perms_add', sw, perms[ k ].id ) )
             continue
         end
         if perms[ k ].category then
@@ -1188,7 +1512,7 @@ function access:initialize( perms )
 
         end
 
-        rlib:log( RLIB_LOG_PERM, lang( 'perms_add', sw, perms[ k ].id ) )
+        log( RLIB_LOG_PERM, lang( 'perms_add', sw, perms[ k ].id ) )
     end
 
     local path_data = storage.mft:getpath( 'data_users' )
@@ -1199,7 +1523,7 @@ function access:initialize( perms )
     end
 
 end
-hook.Add( pid( 'initialize.post' ), pid( 'initialize.perms' ), access.initialize )
+hook.Add( pid( 'initialize.post' ), pid( 'initialize_perms' ), access.initialize )
 
 /*
 *   access :: get users
@@ -1240,16 +1564,16 @@ function access:hasuser( pl )
 end
 
 /*
-*   access :: getroot
+*   access :: root
 *
 *   returns the root user registered with rlib
 *
-*   @call   : local bHasRoot, rootuser = access:getroot( )
+*   @call   : local bHasRoot, rootuser = access:root( )
 *
 *   @return : tbl, bool
 */
 
-function access:getroot( )
+function access:root( )
     local struct    = self:getusers( )
     local bHasRoot  = false
     local rootuser  = nil
@@ -1302,7 +1626,7 @@ function access:writeuser( pl, bIncreaseConn, bProtected )
         file.Write( storage.mft:getpath( 'data_users' ), util.TableToJSON( struct, true ) )
         access.admins = struct
 
-        base:log( 6, lang( 'user_updated', pl_name ) )
+        log( 6, lang( 'user_updated', pl_name ) )
 
         return true
     end
@@ -1324,9 +1648,9 @@ function access:writeuser( pl, bIncreaseConn, bProtected )
     file.Write( storage.mft:getpath( 'data_users' ), util.TableToJSON( struct, true ) )
     access.admins = struct
 
-    base:log( 6, lang( 'user_add', pl_name ) )
+    log( 6, lang( 'user_add', pl_name ) )
     if bIsRoot then
-        base:log( 4, lang( 'user_add_root', pl_name ) )
+        log( 4, lang( 'user_add_root', pl_name ) )
     end
 
     return false
@@ -1363,7 +1687,7 @@ function access:deluser( pl )
         file.Write( storage.mft:getpath( 'data_users' ), util.TableToJSON( struct, true ) )
         access.admins = struct
 
-        base:log( 6, lang( 'user_remove', name ) )
+        log( 6, lang( 'user_remove', name ) )
         return true
     end
 
@@ -1376,7 +1700,7 @@ function access:deluser( pl )
 
     if struct[ pl_sid ] then
         if struct[ pl_sid ].is_root then
-            base:log( 2, lang( 'user_noremove_root', pl_name ) )
+            log( 2, lang( 'user_noremove_root', pl_name ) )
             return false
         end
 
@@ -1385,7 +1709,7 @@ function access:deluser( pl )
         file.Write( storage.mft:getpath( 'data_users' ), util.TableToJSON( struct, true ) )
         access.admins = struct
 
-        base:log( 6, lang( 'user_remove', pl_name ) )
+        log( 6, lang( 'user_remove', pl_name ) )
 
         return true
     end
@@ -1402,10 +1726,10 @@ end
 local function storage_users_initialize( )
     if file.Exists( storage.mft:getpath( 'data_users' ), 'DATA' ) then return end
 
-    local mdata = { }
-    file.Write( storage.mft:getpath( 'data_users' ), glon.encode( mdata ) )
+    local data = { }
+    file.Write( storage.mft:getpath( 'data_users' ), glon.encode( data ) )
 end
-hook.Add( 'InitPostEntity', pid( 'ums' ), storage_users_initialize )
+hook.Add( 'InitPostEntity', pid( '__lib_ums' ), storage_users_initialize )
 
 /*
 *   storage :: logging :: server
@@ -1436,21 +1760,22 @@ function storage:log( cat, bKonsole, msg, ... )
 
     local result, msg   = pcall( sf, msg, unpack( args ) )
 
-    local c_type        = lang( 'logs_cat_general' )
-    if isnumber( cat ) then
-        c_type          = '[' .. helper.str:ucfirst( base._def.debug_titles[ cat ] ) .. ']'
-    elseif isstring( cat ) then
-        c_type          = '[' .. cat .. ']'
-    end
-
+    local c_type        = isnumber( cat ) and '[' .. helper.str:ucfirst( base._def.debug_titles[ cat ] ) .. ']' or isstring( cat ) and '[' .. cat .. ']' or lang( 'logs_cat_general' )
     local m_pf          = os.date( '%m%d%Y' )
     local m_id          = sf( 'RL_%s.txt', m_pf )
 
     local when          = '[' .. os.date( '%I:%M:%S' ) .. ']'
     local resp          = sf( '%s %s %s', when, c_type, msg )
+    local i_boot        = sys.startups or 0
 
-    storage.dir.create  ( path_server )
-    storage.file.append ( path_server, m_id, resp )
+                        if i_boot == 0 or i_boot == '0' then
+                            i_boot = '#boot'
+                        end
+
+    local path          = sf( '%s/%s', path_server, i_boot )
+
+    storage.dir.create  ( path )
+    storage.file.append ( path, m_id, resp )
 
     if bKonsole then
         konsole:add_simple( cat, msg )
@@ -1482,25 +1807,26 @@ function storage:logconn( cat, bKonsole, msg, ... )
     if bKonsole and ( not isbool( bKonsole ) and bKonsole ~= nil ) then return end
     if not msg and not isstring( msg ) then return end
 
-    local args = { ... }
+    local args          = { ... }
 
-    local result, msg = pcall( sf, msg, unpack( args ) )
+    local result, msg   = pcall( sf, msg, unpack( args ) )
 
-    local c_type    = lang( 'logs_cat_uconn' )
-    if isnumber( cat ) then
-        c_type      = '[' .. helper.str:ucfirst( base._def.debug_titles_uconn[ cat ] ) .. ']'
-    elseif isstring( cat ) then
-        c_type      = '[' .. cat .. ']'
-    end
+    local c_type        = isnumber( cat ) and '[' .. helper.str:ucfirst( base._def.debug_titles_uconn[ cat ] ) .. ']' or isstring( cat ) and '[' .. cat .. ']' or lang( 'logs_cat_uconn' )
+    local m_pf          = os.date( '%m%d%Y' )
+    local m_id          = sf( 'RL_%s.txt', m_pf )
 
-    local m_pf      = os.date( '%m%d%Y' )
-    local m_id      = sf( 'RL_%s.txt', m_pf )
+    local when          = '[' .. os.date( '%I:%M:%S' ) .. ']'
+    local resp          = sf( '%s %s %s', when, c_type:upper( ), msg )
+    local i_boot        = sys.startups or 0
 
-    local when      = '[' .. os.date( '%I:%M:%S' ) .. ']'
-    local resp      = sf( '%s %s %s', when, c_type:upper( ), msg )
+                        if i_boot == 0 or i_boot == '0' then
+                            i_boot = '#boot'
+                        end
 
-    storage.dir.create( path_uconn )
-    storage.file.append( path_uconn, m_id, resp )
+    local path          = sf( '%s/%s', path_uconn, i_boot )
+
+    storage.dir.create  ( path )
+    storage.file.append ( path, m_id, resp )
 
     if bKonsole then
         konsole:add_simple( cat, msg )
@@ -1525,12 +1851,12 @@ end
 
 function storage.get.db( mod )
     if not mod then
-        base:log( 2, 'mod not specified\n%s', debug.traceback( ) )
+        log( 2, 'mod not specified\n%s', debug.traceback( ) )
         return false
     end
 
     if not istable( rcore ) then
-        base:log( 2, 'rcore missing\n%s', debug.traceback( ) )
+        log( 2, 'rcore missing\n%s', debug.traceback( ) )
         return false
     end
 
@@ -1550,7 +1876,7 @@ function storage.get.db( mod )
     end
 
     if not db_file then
-        base:log( 2, 'specified module missing db assignment in manifest', debug.traceback( ) )
+        log( 2, 'specified module missing db assignment in manifest\n%s', debug.traceback( ) )
         return false
     end
 
@@ -1588,7 +1914,7 @@ end
 
 function storage.get.ext( txt )
     if not isstring( txt ) then
-        base:log( 2, lang( 'lib_cfg_invalid' ) )
+        log( 2, lang( 'lib_cfg_invalid' ) )
         return
     end
 
@@ -1624,12 +1950,12 @@ end
 
 function storage.get.env( mod )
     if not mod then
-        base:log( 2, 'mod not specified\n%s', debug.traceback( ) )
+        log( 2, 'mod not specified\n%s', debug.traceback( ) )
         return false
     end
 
     if not istable( rcore ) then
-        base:log( 2, 'rcore missing\n%s', debug.traceback( ) )
+        log( 2, 'rcore missing\n%s', debug.traceback( ) )
         return false
     end
 
@@ -1641,7 +1967,7 @@ function storage.get.env( mod )
     end
 
     if not env_id then
-        base:log( 2, 'specified module missing env', debug.traceback( ) )
+        log( 2, 'specified module missing env', debug.traceback( ) )
         return false
     end
 
@@ -1675,7 +2001,7 @@ end
 
 function storage.get.json( txt )
     if not isstring( txt ) then
-        base:log( 2, lang( 'lib_cfg_invalid' ) )
+        log( 2, lang( 'lib_cfg_invalid' ) )
         return
     end
 
@@ -1736,26 +2062,26 @@ local function logs_initialize( )
     *   logs dir diskspace and file count
     */
 
-    sys.log_sz, sys.log_ct = calc.fs.diskTotal( path_logs )
+    sys.log_sz, sys.log_ct, sys.log_fol_ct = calc.fs.diskTotal( path_logs )
 
     /*
     *   uconn dir diskspace and file count
     */
 
-    sys.uconn_sz, sys.uconn_ct = calc.fs.diskTotal( path_uconn )
+    sys.uconn_sz, sys.uconn_ct, sys.uconn_fol_ct = calc.fs.diskTotal( path_uconn )
 
     /*
     *   diskspace usage msg
     */
 
-    if sys.log_ct > cfg.debug.clean_threshold then
-        base:log( 3, lang( 'logs_clean_threshold', cfg.debug.clean_threshold, path_logs, sys.log_sz, 'rlib.debug.cleanlogs' ) )
+    if sys.log_fol_ct > cfg.debug.clean_threshold then
+        log( 3, lang( 'logs_clean_threshold', sys.log_ct, sys.log_fol_ct, path_logs, sys.log_sz, 'rlib.debug.cleanlogs' ) )
     else
-        base:log( RLIB_LOG_SYSTEM, lang( 'logs_dir_size', sys.log_ct, path_logs, sys.log_sz ) )
+        log( RLIB_LOG_SYSTEM, lang( 'logs_dir_size', sys.log_ct, sys.log_fol_ct, path_logs, sys.log_sz ) )
     end
 
 end
-hook.Add( 'InitPostEntity', pid( 'debug.logging' ), logs_initialize )
+hook.Add( 'InitPostEntity', pid( '__lib_debug_logging' ), logs_initialize )
 
 /*
 *   debug :: log
@@ -1776,19 +2102,14 @@ hook.Add( 'InitPostEntity', pid( 'debug.logging' ), logs_initialize )
 
 function konsole:log( path, cat, data )
     if not isstring( path ) then
-        base:log( 2, lang( 'logs_nopath' )  )
+        log( 2, lang( 'logs_nopath' )  )
         return
     end
 
-    path    = mf.paths[ path ] or sf( '%s/%s', mf.name, path )
-    cat     = isnumber( cat ) and cat or 1
+    path            = mf.paths[ path ] or sf( '%s/%s', mf.name, path )
+    cat             = isnumber( cat ) and cat or 1
 
-    local c_type
-    if isnumber( cat ) then
-        c_type      = '[' .. helper.str:ucfirst( base._def.debug_titles[ cat ] ) .. ']'
-    elseif isstring( cat ) then
-        c_type      = '[' .. cat .. ']'
-    end
+    local c_type    = isnumber( cat ) and '[' .. helper.str:ucfirst( base._def.debug_titles[ cat ] ) .. ']' or isstring( cat ) and '[' .. cat .. ']' or ''
 
     /*
     *   determines if data is string or table
@@ -1809,13 +2130,21 @@ function konsole:log( path, cat, data )
         data = table.concat( args, '' )
     end
 
-    local m_pf      = os.date( '%m%d%Y' )
-    local m_id      = sf( 'RL_%s.txt', m_pf )
+    local m_pf          = os.date( '%m%d%Y' )
+    local m_id          = sf( 'RL_%s.txt', m_pf )
 
-    local when      = '[' .. os.date( '%I:%M:%S' ) .. ']'
-    local resp      = sf( '%s %s %s', when, c_type, data )
+    local when          = '[' .. os.date( '%I:%M:%S' ) .. ']'
+    local resp          = sf( '%s %s %s', when, c_type, data )
 
-    storage.file.append( path, m_id, resp )
+    local i_boot        = sys.startups or 0
+
+                        if i_boot == 0 or i_boot == '0' then
+                            i_boot = '#boot'
+                        end
+
+    local lpath         = sf( '%s/%s', path, i_boot )
+
+    storage.file.append( lpath, m_id, resp )
 end
 
 /*
@@ -1830,12 +2159,12 @@ end
 */
 
 function tools.rdo:Run( )
-    timex.simple( pid( 'rdo.initialize' ), 5, function( )
+    timex.simple( 'rlib_rdo_initialize', 5, function( )
         if not cfg.rdo.enabled then return end
         rdo_rendermode( cfg.rdo.enabled )
     end )
 end
-hook.Add( pid( 'initialize.post' ), pid( 'tools.rdo.initialize.post' ), tools.rdo.Run )
+hook.Add( pid( 'initialize.post' ), pid( 'initialize_tools_rdo' ), tools.rdo.Run )
 
 /*
 *   rlib :: pco
@@ -1865,14 +2194,16 @@ function tools.pco:Run( pl, b, admin )
     local clr_status = set and cfg.cmsg.clrs.target or cfg.cmsg.clrs.target_sec
 
     if helper.ok.ply( admin ) then
-        base.msg:direct( pl, lang( 'services_id_pco' ):upper( ), '» ', clr_status, toggle, cfg.cmsg.clrs.msg, ' on you by admin ', cfg.cmsg.clrs.target_tri, admin:Name( ) )
-        base.msg:direct( admin, lang( 'services_id_pco' ):upper( ), '» ', clr_status, toggle, cfg.cmsg.clrs.msg, ' for user ', cfg.cmsg.clrs.target_tri, pl:Name( ) )
-        rlib:log( 1, lang( 'pco_set_debug_usr_admin', admin:Name( ), toggle, pl:Name( ) ) )
+        direct( pl, lang( 'services_id_pco' ):upper( ), '» ', clr_status, toggle, cfg.cmsg.clrs.msg, ' on you by admin ', cfg.cmsg.clrs.target_tri, admin:Name( ) )
+        direct( admin, lang( 'services_id_pco' ):upper( ), '» ', clr_status, toggle, cfg.cmsg.clrs.msg, ' for user ', cfg.cmsg.clrs.target_tri, pl:Name( ) )
+        log( 1, lang( 'pco_set_debug_usr_admin', admin:Name( ), toggle, pl:Name( ) ) )
         return
     end
 
-    base.msg:direct( pl, lang( 'services_id_pco' ):upper( ), '» ', clr_status, toggle )
-    rlib:log( 1, lang( 'pco_set_debug_usr', pl:Name( ), toggle ) )
+    if cfg.pco.broadcast.onjoin then
+        direct( pl, lang( 'services_id_pco' ):upper( ), '» ', clr_status, toggle )
+        log( 1, lang( 'pco_set_debug_usr', pl:Name( ), toggle ) )
+    end
 end
 
 /*
@@ -1891,8 +2222,8 @@ function tools:asay( sender, ... )
     *   require cvar to utilize
     */
 
-    if not helper:cvar_bool( 'rlib_asay' ) and not base:isconsole( sender ) then
-        rlib:log( 3, 'asay disabled » server cvar disabled' )
+    if not cvar:GetBool( 'rlib_asay' ) and not base.con:Is( sender ) then
+        log( 3, lang( 'asay_disabled' ) )
         return false
     end
 
@@ -1900,7 +2231,7 @@ function tools:asay( sender, ... )
     *   define 'name' of sender
     */
 
-    local from = ( not isstring( sender ) and base:isconsole( sender ) and cfg.smsg.to_console ) or ( not isstring( sender ) and helper.ok.ply( sender ) and sender:Nick( ) ) or ( isstring( sender ) and sender ) or cfg.cmsg.tag_server
+    local from = ( not isstring( sender ) and base.con:Is( sender ) and cfg.smsg.to_console ) or ( not isstring( sender ) and helper.ok.ply( sender ) and sender:Nick( ) ) or ( isstring( sender ) and sender ) or cfg.cmsg.tag_server
 
     /*
     *   define colors table
@@ -1921,11 +2252,11 @@ function tools:asay( sender, ... )
     *       send a copy of msg but replace from's username with 'You'
     */
 
-    if base:isconsole( sender ) then
-        base:console( sender, sclr.c2, '[' .. cfg.smsg.to_asay .. ']', sclr.msg, ' sent by ', sclr.c1, cfg.smsg.to_console, sclr.msg, ' » ', sclr.msg, ... )
-    elseif not base:isconsole( sender ) and helper.ok.ply( sender ) then
-        sender:msg( sclr.t1, cfg.smsg.to_self, sclr.msg, ' » ', sclr.t4, cfg.smsg.to_admins, sclr.msg, ':\n', sclr.msg, ... )
-        base:log( RLIB_LOG_ASAY, '[ %s ] » %s', from, ... )
+    if base.con:Is( sender ) then
+        con( sender, sclr.c2, '[' .. cfg.smsg.to_asay .. ']', sclr.msg, ' sent by ', sclr.c1, cfg.smsg.to_console, sclr.msg, ' » ', sclr.msg, ... )
+    elseif not base.con:Is( sender ) and helper.ok.ply( sender ) then
+        sender:umsg( sclr.t1, cfg.smsg.to_self, sclr.msg, ' » ', sclr.t4, cfg.smsg.to_admins, sclr.msg, ':\n', sclr.msg, ... )
+        log( RLIB_LOG_ASAY, '[ %s ] » %s', from, ... )
     end
 
     /*
@@ -1935,7 +2266,7 @@ function tools:asay( sender, ... )
     for v in helper.get.players( ) do
         if v == sender then continue end
         if not access:allow( v, 'rlib_asay' ) then continue end
-        v:msg( sclr.t1, from, sclr.msg, ' » ', sclr.t3, cfg.smsg.to_admins, sclr.msg, '\n', sclr.msg, unpack( args ) )
+        v:umsg( sclr.t1, from, sclr.msg, ' » ', sclr.t3, cfg.smsg.to_admins, sclr.msg, '\n', sclr.msg, unpack( args ) )
     end
 
 end
@@ -1990,7 +2321,7 @@ function tools:alogs( cat, sender, ... )
 
     for v in helper.get.players( ) do
         if not access:allow( v, 'rlib_alogs' ) then continue end
-        v:msg( sclr.t1, sender, sclr.msg, ' » ', sclr.t3, c_type, sclr.msg, ' » ', sclr.t2, cfg.smsg.to_admins, sclr.msg, ':\n', sclr.msg, unpack( args ) )
+        v:umsg( sclr.t1, sender, sclr.msg, ' » ', sclr.t3, c_type, sclr.msg, ' » ', sclr.t2, cfg.smsg.to_admins, sclr.msg, ':\n', sclr.msg, unpack( args ) )
     end
 
     /*
@@ -2016,7 +2347,7 @@ hook.Add( 'alogs.send', 'alogs.send', function( cat, sender, ... ) tools:alogs( 
 */
 
 local function cvar_cb_branch( name, old, new )
-    base:log( 1, lang( 'cvar_changed', name, tostring( old ), tostring( new ) ) )
+    log( 1, lang( 'cvar_changed', name, ts( old ), ts( new ) ) )
 end
 cvars.AddChangeCallback( 'rlib_branch', cvar_cb_branch )
 
@@ -2058,7 +2389,7 @@ local function netlib_report( len, pl )
         reporter_msg    = reporter_input or lang( 'none' ),
         rlib_build      = mf.version,
         server_ip       = base.get:ip( ),
-        server_port     = tostring( base.get:port( ) ),
+        server_port     = ts( base.get:port( ) ),
         server_name     = base.get:host( ),
         server_os       = base.get:os( ),
         server_gm       = base.get:gm( true ),
@@ -2112,12 +2443,34 @@ net.Receive( 'rlib.tools.report', netlib_report )
 
 local function netlib_udm_check( len, pl )
     local task_udm = coroutine.create( function( )
-        local branch = sf( mf.astra.branch, helper:cvar_str( 'rlib_branch', 'stable' ) )
-        base.udm:check( branch )
+        local branch = sf( mf.astra.udm.branch, cvar:GetStr( 'rlib_branch', 'stable' ) )
+        base.udm:Check( branch )
     end )
     coroutine.resume( task_udm )
 end
 net.Receive( 'rlib.udm.check', netlib_udm_check )
+
+/*
+*   netlib :: udm check
+*
+*   checks the host server for any updates to rlib
+*/
+
+local function netlib_welcome( len, pl )
+
+    local auth_id               = base.oort:AuthID( )
+    auth_id                     = tostring( auth_id )
+
+    local bHasRoot, rootuser    = access:root( )
+    local owner                 = bHasRoot and istable( rootuser ) and rootuser.name or 'unclaimed'
+    owner                       = tostring( owner )
+
+    net.Start                   ( 'rlib.welcome'    )
+    net.WriteString             ( auth_id           )
+    net.WriteString             ( owner             )
+    net.Send                    ( pl                )
+end
+net.Receive( 'rlib.welcome', netlib_welcome )
 
 /*
 *   advanced logging which allows for any client-side errors to be sent to the server as well.
@@ -2198,8 +2551,8 @@ local function tools_asay_ps_toggle( pl, text )
     *   require cvar to utilize
     */
 
-    if not helper:cvar_bool( 'rlib_asay' ) then
-        rlib:log( 3, 'asay disabled » server cvar disabled' )
+    if not cvar:GetBool( 'rlib_asay' ) then
+        log( 3, lang( 'asay_disabled' ) )
         return false
     end
 
@@ -2283,8 +2636,8 @@ local function tools_pco_ps_toggle( pl, text )
     if not cfg.pco.binds.enabled then return end
     if not cfg.pco.binds.chat[ msg ] then return end
 
-    if not helper:cvar_bool( 'rlib_pco' ) then
-        rlib:log( 6, lang( 'pco_disabled_debug' ) )
+    if not cvar:GetBool( 'rlib_pco' ) then
+        log( 6, lang( 'pco_disabled_debug' ) )
         return false
     end
 
@@ -2381,9 +2734,9 @@ local function tools_rcfg_ps_toggle( pl, text )
     if not cfg.rcfg.binds.enabled then return end
     if not cfg.rcfg.binds.chat[ msg ] then return end
 
-    rlib.msg:route( pl, false, rlib.manifest.name, lang( 'lib_addons_opening' ) )
+    route( pl, false, rlib.manifest.name, lang( 'lib_addons_opening' ) )
 
-    timer.Simple( 0.5, function( )
+    timex.simple( 0.5, function( )
         net.Start   ( 'rlib.tools.rcfg'     )
         net.Send    ( pl                    )
     end )

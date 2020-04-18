@@ -1,11 +1,10 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
-*   @file           csh.lua
+*   @package        : rlib
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -25,7 +24,6 @@ local base              = rlib
 local mf                = base.manifest
 local prefix            = mf.prefix
 local script            = mf.name
-local version           = mf.version
 local cfg               = base.settings
 
 /*
@@ -34,7 +32,6 @@ local cfg               = base.settings
 
 local helper            = base.h
 local storage           = base.s
-local utils             = base.u
 local access            = base.a
 local tools             = base.t
 local konsole           = base.k
@@ -57,7 +54,6 @@ local setmetatable      = setmetatable
 local Vector            = Vector
 local Angle             = Angle
 local Entity            = Entity
-local EffectData        = EffectData
 local GetConVar         = GetConVar
 local tonumber          = tonumber
 local tostring          = tostring
@@ -68,8 +64,7 @@ local isentity          = isentity
 local isnumber          = isnumber
 local isstring          = isstring
 local type              = type
-local file              = file
-local debug             = debug
+local Color             = Color
 local util              = util
 local table             = table
 local os                = os
@@ -80,16 +75,11 @@ local string            = string
 local sf                = string.format
 
 /*
-*   Localized cmd func
-*
-*   @source : lua\autorun\libs\calls
-*   @param  : str t
-*   @param  : varg { ... }
+*   simplifiy funcs
 */
 
-local function call( t, ... )
-    return rlib:call( t, ... )
-end
+local function log( ... ) base:log( ... ) end
+local function route( ... ) base.msg:route( ... ) end
 
 /*
 *   Localized translation func
@@ -104,13 +94,13 @@ end
 */
 
 local function pref( id, suffix )
-    local affix = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or prefix
-    affix = affix:sub( -1 ) ~= '.' and string.format( '%s.', affix ) or affix
+    local affix     = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or prefix
+    affix           = affix:sub( -1 ) ~= '.' and sf( '%s.', affix ) or affix
 
-    id = isstring( id ) and id or 'noname'
-    id = id:gsub( '[%c%s]', '.' )
+    id              = isstring( id ) and id or 'noname'
+    id              = id:gsub( '[%c%s]', '.' )
 
-    return string.format( '%s%s', affix, id )
+    return sf( '%s%s', affix, id )
 end
 
 /*
@@ -129,45 +119,9 @@ end
 *   knowing what to type in order to turn something on, so here is a solution, with some added humor.
 */
 
-    local options_yes       = { 'true', '1', 'on', 'yes', 'enable', 'enabled', 'sure', 'agree', 'confirm' }
-    local options_no        = { 'false', '0', 'off', 'no', 'disable', 'disabled', 'nah', 'disagree', 'decline' }
-    local options_huh       = { 'kinda', 'sorta', 'tomorrow', 'maybe' }
-
-/*
-*   base :: cc :: run
-*
-*   alias of RunConsoleCommand
-*
-*   @param  : varg { ... }
-*/
-
-function base.cc.Run( ... )
-    RunConsoleCommand( ... )
-end
-
-/*
-*   base :: cc :: add
-*
-*   alias of concommand.Add
-*
-*   @param  : varg { ... }
-*/
-
-function base.cc.Add( ... )
-    concommand.Add( ... )
-end
-
-/*
-*   base :: cc :: remove
-*
-*   alias of concommand.Remove
-*
-*   @param  : varg { ... }
-*/
-
-function base.cc.Rem( ... )
-    concommand.Remove( ... )
-end
+local options_yes       = { 'true', '1', 'on', 'yes', 'enable', 'enabled', 'sure', 'agree', 'confirm' }
+local options_no        = { 'false', '0', 'off', 'no', 'disable', 'disabled', 'nah', 'disagree', 'decline' }
+local options_huh       = { 'kinda', 'sorta', 'tomorrow', 'maybe' }
 
 /*
 *   helper :: print table
@@ -458,19 +412,19 @@ function helper.get.cmdprefix( str )
 end
 
 /*
-*   helper :: rp :: jobs
+*   helper :: get :: jobs
 *
 *   return list of all rp gamemode jobs
 *   returns key and value
 *
-*   @ex     : for k, v in helper.rp.jobs( ) do
+*   @ex     : for k, v in helper.get.jobs( ) do
 *
 *   @param  : bool bTableOnly
 *   @param  : bool bSorted
 *   @return : key, value
 */
 
-function helper.rp.jobs( bTableOnly, bSorted )
+function helper.get.jobs( bTableOnly, bSorted )
     if not istable( RPExtraTeams ) then return { } end
     local src = RPExtraTeams
     if bTableOnly then
@@ -485,40 +439,9 @@ function helper.rp.jobs( bTableOnly, bSorted )
         end
     end )
 end
-helper.get.jobs = helper.rp.jobs
 
 /*
-*   helper :: rp :: ents
-*
-*   return list of all rp gamemode jobs
-*   returns key and value
-*
-*   @ex     : for k, v in helper.rp.ents( ) do
-*
-*   @param  : bool bTableOnly
-*   @param  : bool bSorted
-*   @return : key, value
-*/
-
-function helper.rp.ents( bTableOnly, bSorted )
-    if not istable( DarkRPEntities ) then return { } end
-    local src = DarkRPEntities
-    if bTableOnly then
-        return coroutine.wrap( function( )
-            coroutine.yield( src )
-        end )
-    end
-    return coroutine.wrap( function( )
-        local sorting = not bSorted and pairs or SortedPairs
-        for _, v in sorting( src ) do
-            coroutine.yield( _, v )
-        end
-    end )
-end
-helper.get.rpents = helper.rp.ents
-
-/*
-*   helper :: rp :: shipements
+*   helper :: get :: shipements
 *
 *   return list of all entries in rp gamemode shipments table
 *
@@ -529,7 +452,7 @@ helper.get.rpents = helper.rp.ents
 *   @return : key, value
 */
 
-function helper.rp.ships( bTableOnly, bSorted )
+function helper.get.ships( bTableOnly, bSorted )
     if not istable( CustomShipments ) then return { } end
     local src = CustomShipments
     if bTableOnly then
@@ -544,21 +467,20 @@ function helper.rp.ships( bTableOnly, bSorted )
         end
     end )
 end
-helper.get.rpships = helper.rp.ships
 
 /*
-*   helper :: rp :: vehicles
+*   helper :: get :: vehicles
 *
 *   return list of all entries in rp gamemode vehicles table
 *
-*   @ex     : for k, v in helper.rp.veh( ) do
+*   @ex     : for k, v in helper.get.veh( ) do
 *
 *   @param  : bool bTableOnly
 *   @param  : bool bSorted
 *   @return : key, value
 */
 
-function helper.rp.veh( bTableOnly, bSorted )
+function helper.get.veh( bTableOnly, bSorted )
     if not istable( CustomVehicles ) then return { } end
     local src = CustomVehicles
     if bTableOnly then
@@ -573,21 +495,20 @@ function helper.rp.veh( bTableOnly, bSorted )
         end
     end )
 end
-helper.get.rpveh = helper.rp.veh
 
 /*
-*   helper :: rp :: food
+*   helper :: get :: food
 *
 *   return list of all entries in rp gamemode food table
 *
-*   @ex     : for k, v in helper.rp.food( ) do
+*   @ex     : for k, v in helper.get.food( ) do
 *
 *   @param  : bool bTableOnly
 *   @param  : bool bSorted
 *   @return : key, value
 */
 
-function helper.rp.food( bTableOnly, bSorted )
+function helper.get.food( bTableOnly, bSorted )
     if not istable( FoodItems ) then return { } end
     local src = FoodItems
     if bTableOnly then
@@ -602,7 +523,60 @@ function helper.rp.food( bTableOnly, bSorted )
         end
     end )
 end
-helper.get.rpfood = helper.rp.food
+
+/*
+*   helper :: get :: ents
+*
+*   return list of all rp gamemode jobs
+*   returns key and value
+*
+*   @ex     : for k, v in helper.get.rpents( ) do
+*
+*   @param  : bool bTableOnly
+*   @param  : bool bSorted
+*   @return : key, value
+*/
+
+function helper.get.rpents( bTableOnly, bSorted )
+    if not istable( DarkRPEntities ) then return { } end
+    local src = DarkRPEntities
+    if bTableOnly then
+        return coroutine.wrap( function( )
+            coroutine.yield( src )
+        end )
+    end
+    return coroutine.wrap( function( )
+        local sorting = not bSorted and pairs or SortedPairs
+        for _, v in sorting( src ) do
+            coroutine.yield( _, v )
+        end
+    end )
+end
+
+/*
+*   helper :: get :: entities
+*
+*   return list of all ents
+*
+*   @ex     : for v in helper.get.ents( ) do
+*
+*   @param  : bool, str bSorted
+*   @return : value
+*/
+
+function helper.get.ents( bKey, sorted )
+    return coroutine.wrap( function( )
+        local sorting = ( not sorted and pairs ) or ( isfunction( sorted ) and sorted ) or ( isbool( sorted ) == true and SortedPairs )
+        for _, v in sorting( ents.GetAll( ) ) do
+            if not IsValid( v ) then continue end
+            if bKey then
+                coroutine.yield( _, v )
+            else
+                coroutine.yield( v )
+            end
+        end
+    end )
+end
 
 /*
 *   helper :: get :: players nearby
@@ -640,31 +614,6 @@ function helper.get.playersNearby( pl, dist )
 end
 
 /*
-*   helper :: get :: entities
-*
-*   return list of all ents
-*
-*   @ex     : for v in helper.get.ents( ) do
-*
-*   @param  : bool bSorted
-*   @return : value
-*/
-
-function helper.get.ents( bKey, bSorted )
-    return coroutine.wrap( function( )
-        local sorting = not bSorted and pairs or SortedPairs
-        for _, v in sorting( ents.GetAll( ) ) do
-            if not IsValid( v ) then continue end
-            if bKey then
-                coroutine.yield( _, v )
-            else
-                coroutine.yield( v )
-            end
-        end
-    end )
-end
-
-/*
 *   helper :: get :: data
 *
 *   return list of all items in table
@@ -672,14 +621,14 @@ end
 *   @ex     : for v in helper.get.data( table_name ) do
 *
 *   @param  : tbl tbl
-*   @param  : bool bSorted
+*   @param  : bool, str sorted
 *   @return : value
 */
 
-function helper.get.data( tbl, bSorted )
+function helper.get.data( tbl, sorted )
     if not istable( tbl ) then return end
     return coroutine.wrap( function( )
-        local sorting = not bSorted and pairs or SortedPairs
+        local sorting = ( not sorted and pairs ) or ( isfunction( sorted ) and sorted ) or ( isbool( sorted ) == true and SortedPairs )
         for _, v in sorting( tbl ) do
             coroutine.yield( v )
         end
@@ -696,14 +645,14 @@ end
 *   @ex     : for k, v in helper.get.data( table_name ) do
 *
 *   @param  : tbl tbl
-*   @param  : bool bSorted
+*   @param  : bool, str sorted
 *   @return : key, val
 */
 
-function helper.get.table( tbl, bSorted )
+function helper.get.table( tbl, sorted )
     if not istable( tbl ) then return end
     return coroutine.wrap( function( )
-        local sorting = not bSorted and pairs or SortedPairs
+        local sorting = ( not sorted and pairs ) or ( isfunction( sorted ) and sorted ) or ( isbool( sorted ) == true and SortedPairs )
         for _, v in sorting( tbl ) do
             coroutine.yield( _, v )
         end
@@ -816,16 +765,16 @@ end
 /*
 *   helper :: get :: groupmatch
 *
-*   returns if a ply usergroup matches tbl
+*   returns if a pl usergroup matches tbl
 *
 *   @param  : tbl tbl
-*   @param  : ply ply
+*   @param  : ply pl
 *   @return : bool
 */
 
-function helper.get.groupmatch( tbl, ply )
+function helper.get.groupmatch( tbl, pl )
     for v in helper.get.data( tbl ) do
-        if v == ply:getgroup( true ) then
+        if v == pl:getgroup( true ) then
             return true
         end
     end
@@ -882,6 +831,18 @@ function helper.get.haspop( )
 end
 
 /*
+*   helper :: get :: population
+*
+*   @call   : helper.get.popcount( )
+*
+*   @return : int
+*/
+
+function helper.get.popcount( )
+    return #player.GetAll( ) or 0
+end
+
+/*
 *   helper :: get :: id
 *
 *   makes a new id based on the specified varargs
@@ -899,7 +860,8 @@ function helper.get.id( ... )
     local args          = { ... }
     local resp          = table.concat( args, '_' )
     resp                = resp:lower( )
-    resp                = resp:gsub( '[%p%c%s]', '.' )
+    resp                = resp:gsub( '[%p%c]', '.' )
+    resp                = resp:gsub( '[%s]', '_' )
 
     return resp
 end
@@ -1031,7 +993,7 @@ end
 *           : for k, v in helper.ent.find( 'class_id', true ) do
 *
 *   @param  : str ent
-*   @param  : bool bSorted
+*   @param  : bool bKey
 *   @return : value
 */
 
@@ -1054,15 +1016,15 @@ end
 *   library includes numerous packages which will be registered and stored in their own table
 *   packages include timex, rnet, and calc
 *
-*   package manifests stored in rlib.pkgs.index
+*   package manifests stored in rlib.package.index
 *
 *   @param  : tbl pkg
 */
 
-function base.pkgs:register( pkg )
+function base.package:Register( pkg )
     if not istable( pkg ) then return end
     if not istable( pkg.__manifest ) then
-        base:log( 2, 'skipping package registration for [ %s ] » missing manifest', pkg._NAME )
+        log( 2, 'skipping package registration for [ %s ] » missing manifest', pkg._NAME )
         return
     end
 
@@ -1078,6 +1040,64 @@ function base.pkgs:register( pkg )
         version = pkg.__manifest.version,
     }
 end
+
+/*
+*   packages :: installed
+*
+*   checks to see if a module is indeed available to use
+*
+*   @ex     :   rlib.package:bInstalled( 'glon', mod )
+*               rlib.package:bInstalled( 'rnet', 'module' )
+*
+*   @param  : str name
+*   @param  : tbl, str requester
+*   @return : bool
+*/
+
+function base.package:bInstalled( name, requester )
+    if not name then return end
+    name = isstring( name ) and name or tostring( name )
+
+    local id = requester or script
+
+    if ( isstring( requester ) and istable( rcore ) and rcore.modules[ requester ] and rcore.modules[ requester ].enabled ) then
+        id = rcore.modules[ requester ].name
+    elseif ( istable( requester ) and requester.enabled ) then
+        id = requester.name
+    elseif ( istable( requester ) and not requester.name ) then
+        id = script
+    end
+
+    if package.loaded[ name ] then return true end
+
+    for _, v in ipairs( package.searchers or package.loaders ) do
+        local loader = v( name )
+        if isfunction( loader ) then
+            package.preload[ name ] = loader
+            return true
+        end
+    end
+
+    log( 2, 'missing module [ %s ] » required for [ %s ]', name, id )
+
+    return false
+end
+
+/*
+*   initialize :: modules
+*
+*   utilizes require to load modules
+*/
+
+local function lib_initialize_modules( )
+
+    /*
+    *   require
+    */
+
+
+end
+hook.Add( pid( 'initialize.post' ), pid( 'initialize_modules' ), lib_initialize_modules )
 
 /*
 *   access :: ulx_getgroup
@@ -1133,6 +1153,7 @@ function access:getperm( perm, mod )
     end
     return not mod and perm or ( isstring( mod ) and rcore.modules[ mod ] and rcore.modules[ mod ].permissions[ perm ] ) or ( istable( mod ) and mod.permissions[ perm ] )
 end
+access.gperm = access.getperm
 
 /*
 *   access :: get perm :: id
@@ -1140,6 +1161,7 @@ end
 *   returns the name or id of a permission
 *
 *   @call   : access:getperm_id( perm, mod )
+*           : access:pid( perm, mod )
 *
 *   @param  : str perm
 *   @param  : str, tbl mod
@@ -1155,6 +1177,7 @@ function access:getperm_id( perm, mod )
     local permission = not mod and perm or ( isstring( mod ) and rcore.modules[ mod ] and rcore.modules[ mod ].permissions[ perm ] ) or ( istable( mod ) and mod.permissions[ perm ] )
     return ( permission and ( permission.name or permission.id ) or perm )
 end
+access.pid = access.getperm_id
 
 /*
 *   access :: ulx
@@ -1193,7 +1216,7 @@ end
 function access:hasperm( pl, perm, bThrowErr )
     if not access:validate( pl, perm ) then
         local str_perm = perm and tostring( perm ) or lang( 'action_requested' )
-        base.msg:route( pl, false, script, 'invalid permission »', cfg.cmsg.clrs.target, str_perm )
+        base.msg:route( pl, false, script, lang( 'perms_invalid' ), cfg.cmsg.clrs.target, str_perm )
         return false
     end
     return true
@@ -1214,7 +1237,7 @@ end
 function access:deny_permission( pl, mod, perm )
     mod = istable( mod ) and mod.name or isstring( mod ) and mod
     local str_perm = perm and tostring( perm ) or lang( 'action_requested' )
-    base.msg:route( pl, false, mod, 'invalid permission »', cfg.cmsg.clrs.target, str_perm )
+    route( pl, false, mod, lang( 'perms_invalid' ), cfg.cmsg.clrs.target, str_perm )
     return false
 end
 
@@ -1234,7 +1257,7 @@ end
 function access:deny_consoleonly( pl, mod, perm )
     mod = istable( mod ) and isstring( mod.name ) and mod.name or isstring( mod ) and mod or tostring( mod )
     local str_perm = perm and tostring( perm ) or lang( 'action_requested' )
-    base.msg:route( pl, false, mod, 'command', cfg.cmsg.clrs.target, str_perm, cfg.cmsg.clrs.msg, 'must be executed', cfg.cmsg.clrs.target_sec, 'server-side only' )
+    route( pl, false, mod, 'command', cfg.cmsg.clrs.target, str_perm, cfg.cmsg.clrs.msg, 'must be executed', cfg.cmsg.clrs.target_sec, 'server-side only' )
     return false
 end
 
@@ -1254,7 +1277,7 @@ end
 function access:deny_console( pl, mod, perm )
     mod = istable( mod ) and isstring( mod.name ) and mod.name or isstring( mod ) and mod or tostring( mod )
     local str_perm = perm and tostring( perm ) or lang( 'action_requested' )
-    base.msg:route( pl, false, mod, 'command ', cfg.cmsg.clrs.target, str_perm, cfg.cmsg.clrs.msg, 'must be called by valid player and not by', cfg.cmsg.clrs.target_sec, 'console' )
+    route( pl, false, mod, 'command ', cfg.cmsg.clrs.target, str_perm, cfg.cmsg.clrs.msg, 'must be called by valid player and not by', cfg.cmsg.clrs.target_sec, 'console' )
     return false
 end
 
@@ -1263,15 +1286,15 @@ end
 *
 *   returns if a player is the owner of a script
 *
-*   @param  : ply ply
+*   @param  : ply pl
 *   @return : bool
 */
 
-function access:bIsOwner( ply )
-    if not helper.ok.ply( ply ) then return false end
+function access:bIsOwner( pl )
+    if not helper.ok.ply( pl ) then return false end
 
     local owners = base.get:owners( ) or { }
-    if table.HasValue( owners, ply:SteamID64( ) ) then return true end
+    if table.HasValue( owners, pl:SteamID64( ) ) then return true end
 
     return false
 end
@@ -1287,13 +1310,13 @@ end
 *       : is owner         [ internal ]
 *       : is dev           [ internal ]
 *
-*   @param  : ply ply
+*   @param  : ply pl
 *   @param  : bool bNoConsole
 *   @return : bool
 */
 
-function access:bIsRoot( ply, bNoConsole )
-    if ( not bNoConsole and base:isconsole( ply ) ) or ( helper.ok.ply( ply ) and ( access:bIsOwner( ply ) or access:bIsDev( ply ) or access:bIsAdmin( ply ) or ply:IsSuperAdmin( ) ) ) then
+function access:bIsRoot( pl, bNoConsole )
+    if ( not bNoConsole and base.con:Is( pl ) ) or ( helper.ok.ply( pl ) and ( access:bIsOwner( pl ) or access:bIsDev( pl ) or access:bIsAdmin( pl ) or pl:IsSuperAdmin( ) ) ) then
         return true
     end
     return false
@@ -1310,16 +1333,16 @@ end
 *   script owners could have access but i felt it may be annoying to server owners to have text
 *   scrolling in the bottom right of their screen.
 *
-*   @param  : ply ply
+*   @param  : ply pl
 *   @return : bool
 */
 
-function access:bIsDev( ply )
-    if base:isconsole( ply ) then return true end
+function access:bIsDev( pl )
+    if base.con:Is( pl ) then return true end
 
     if not mf.developers then return end
     local devs = mf.developers or { }
-    if table.HasValue( devs, ply:SteamID64( ) ) then return true end
+    if table.HasValue( devs, pl:SteamID64( ) ) then return true end
 
     return false
 end
@@ -1332,17 +1355,17 @@ end
 *
 *   only give this to users you trust
 *
-*   @param  : ply ply
+*   @param  : ply pl
 *   @return : bool
 */
 
-function access:bIsAdmin( ply )
-    if base:isconsole( ply ) then return true end
+function access:bIsAdmin( pl )
+    if base.con:Is( pl ) then return true end
 
     if not access.admins then return end
-    local ply_sid = ply:SteamID( )
+    local pl_sid = pl:SteamID( )
 
-    if access.admins[ ply_sid ] then return true end
+    if access.admins[ pl_sid ] then return true end
 
     return false
 end
@@ -1361,7 +1384,7 @@ end
 
 function access:validate( pl, perm )
     if not IsValid( pl ) then
-        if base:isconsole( pl ) then return true end
+        if base.con:Is( pl ) then return true end
         return false
     end
 
@@ -1411,7 +1434,7 @@ end
 
 function access:allow( pl, perm, mod )
     if not IsValid( pl ) then
-        if base:isconsole( pl ) then return true end
+        if base.con:Is( pl ) then return true end
         return false
     end
 
@@ -1467,7 +1490,7 @@ end
 
 function access:strict( pl, perm, mod )
     if not IsValid( pl ) then
-        if base:isconsole( pl ) then return true end
+        if base.con:Is( pl ) then return true end
         return false
     end
 
@@ -1514,7 +1537,7 @@ function access:allow_throwExcept( pl, perm, mod, msg )
     local bChk = self:allow( pl, perm, mod )
     if not bChk then
         msg = isstring( msg ) and msg or 'You lack permission to'
-        base.msg:target( pl, mod.name, msg, cfg.cmsg.clrs.target_tri, tostring( perm ) )
+        base.msg:target( pl, ( mod and mod.name ) or mf.name, msg, cfg.cmsg.clrs.target_tri, tostring( perm ) )
         return false
     end
 
@@ -1537,7 +1560,7 @@ function access:strict_throwExcept( pl, perm, mod, msg )
     local bChk = self:strict( pl, perm, mod )
     if not bChk then
         msg = isstring( msg ) and msg or 'You lack permission to'
-        base.msg:target( pl, mod.name, msg, cfg.cmsg.clrs.target_tri, tostring( perm ) )
+        base.msg:target( pl, ( mod and mod.name ) or mf.name, msg, cfg.cmsg.clrs.target_tri, tostring( perm ) )
         return false
     end
 
@@ -1758,14 +1781,17 @@ end
 /*
 *   helper :: str :: empty str
 *
-*   checks for a valid string but also checks for blank or space strings
+*   checks for a valid string but also checks for blank or space chars
 
 *   @param  : str str
 *   @return : bool
 */
 
 function helper.str:isempty( str )
-    if not isstring( str ) or str == '' or str == ' ' or str == 'NULL' or str == NULL then return true end
+    if not str then return true end
+
+    local text = str:gsub( '%s', '' )
+    if not isstring( text ) or text == '' or text == 'NULL' or str == NULL then return true end
     return false
 end
 
@@ -1958,16 +1984,16 @@ end
 
 function helper.str:wordwrap( str, limit )
     if not isstring( str ) then return end
-    limit = limit or 100
+    limit = isnumber( limit ) and limit or 100
 
-    local seg, pos = '', 1
-    local resp, c = { }, 0
+    local seg, pos  = '', 1
+    local resp, c   = { }, 0
     str:gsub( '(%s*)()(%S+)()', function( space, st, word, tend )
         if tend - pos > limit then
-            pos = st
+            pos     = st
             table.insert( resp, seg )
-            seg = word
-            c = c + 1
+            seg     = word
+            c       = c + 1
         else
             seg = seg .. space .. word
         end
@@ -2078,12 +2104,12 @@ end
 * 
 *   assigns a clientconvar based on the parameters specified.
 *   these convars will then be used later in order for the player to modify their settings on-the-fly.
-* 
+*
 *   ::  example
 *       for name, line in base.sortedkeys( table ) do
 *           table.insert( new_sorted_table, line )
 *       end
-*   
+*
 *   @param  : tbl src
 *   @param  : func sortf
 *   @return : mixed
@@ -2091,7 +2117,7 @@ end
 
 function helper:sortedkeys( src, sortf )
     if not istable( src ) then
-        base:log( 2, 'cannot sort by key with invalid table' )
+        log( 2, lang( 'sort_badtable' ) )
         return
     end
 
@@ -2115,22 +2141,31 @@ end
 
 /* 
 *   helper :: switch
-* 
+*
 *   emulates a switch statement
-*   
+*
+*   a = switch
+*   {
+*       [ 1 ] = function ( x ) print( x, 10 ) end,
+*       [ 2 ] = function ( x ) print( x, 20 ) end,
+*       default = function ( x ) print( x, 0 ) end,
+*   }
+*
+*   a:case( 1 )
+*   a:case( 2 )
+*
 *   @param  : tbl tbl
 *   @return : tbl
 */
 
 function helper.switch( tbl )
-    tbl.case = function( ... )
-        local t = table.remove( arg, 1 )
-        local f = t[ arg[ 1 ] ] or t.default
+    tbl.case = function( self, x )
+        local f = self[ x ] or self.default
         if f then
             if isfunction( f ) then
-                f( arg )
+                f( x, self )
             else
-                print( 'Case: ' .. tostring( x ) .. ' not a fn' )
+                error( lang( 'case_nofunc', tostring( x ) ) )
             end
         end
     end
@@ -2156,7 +2191,7 @@ function helper.util:bTableExact( a, b )
         for k, v in pairs( t1 ) do
             if type( t1[ k ] ) ~= type( t2[ k ] ) then return false end
 
-            if type( t1[ k ] ) == 'table' then
+            if istable( t1[ k ] ) then
                 if not compare_table( t1[ k ], t2[ k ] ) then return false end
             else
                 if t1[ k ] ~= t2[ k ] then return false end
@@ -2166,7 +2201,7 @@ function helper.util:bTableExact( a, b )
         for k, v in pairs( t2 ) do
             if type( t2[ k ] ) ~= type( t1[ k ] ) then return false end
 
-            if type( t2[ k ] ) == 'table' then
+            if istable( t2[ k ] ) then
                 if not compare_table( t2[ k ], t1[ k ] ) then return false end
             else
                 if t2[ k ] ~= t1[ k ] then return false end
@@ -2178,7 +2213,7 @@ function helper.util:bTableExact( a, b )
 
     if type( a ) ~= type( b ) then return false end
 
-    if type( a ) == 'table' then
+    if istable( a ) then
         return compare_table( a, b )
     else
         return ( a == b )
@@ -2233,293 +2268,6 @@ function helper:clr_clamp( val )
     else
         return math.Clamp( math.Round( val ), 0, 255 )
     end
-end
-
-/*
-*   create convar
-*
-*   @param  : str name
-*   @param  : str value
-*   @param  : enum, tbl flags
-*   @param  : str helptext
-*/
-
-function helper:cvar_create( name, value, flags, helptext )
-    if not helper.str:valid( name ) or not helper.str:valid( name ) then
-        base:log( 2, 'cannot create cvar with missing parameters' )
-        return
-    end
-
-    if not ConVarExists( name ) then
-        if not value then
-            base:log( 2, 'cvar default missing » [ %s ]', name )
-            return
-        end
-
-        if not flags then
-            base:log( 2, 'cvar flags missing » [ %s ]', name )
-            return
-        end
-
-        helptext = helptext or ''
-
-        CreateConVar( name, value, flags, helptext )
-
-        base:log( 6, '+ convar [ %s ]', name )
-    end
-end
-
-/* 
-*   helper :: convar :: clr
-*
-*   fetches the proper clrs associated with a particular convar.
-*
-*   @param  : str id
-*   @param  : tbl alt
-*   @return : clr tbl
-*/
-
-function helper:cvar_clr( id, alt )
-    local clr_list = { id .. '_red', id .. '_green', id .. '_blue', id .. '_alpha' }
-
-    local cnt_entries = 0
-    for _, v in pairs( clr_list ) do
-        if not ConVarExists( v ) then continue end
-        cnt_entries = cnt_entries + 1
-    end
-
-    if cnt_entries < 3 then
-        return alt or Color( 255, 255, 255, 255 )
-    elseif cnt_entries == 3 then
-        return Color( GetConVar( id .. '_red' ):GetInt( ), GetConVar( id .. '_green' ):GetInt( ), GetConVar( id .. '_blue' ):GetInt( ) )
-    elseif cnt_entries > 3 then
-        return Color( GetConVar( id .. '_red' ):GetInt( ), GetConVar( id .. '_green' ):GetInt( ), GetConVar( id .. '_blue' ):GetInt( ), GetConVar( id .. '_alpha' ):GetInt( ) )
-    end
-end
-
-/* 
-*   helper :: convar :: validate
-*
-*   checks if the provided item is a convar
-*
-*   @param  : mix obj
-*   @return : bool
-*/
-
-function helper:isconvar( obj )
-    return ( type( obj ) == 'ConVar' ) or false
-end
-
-/* 
-*   helper :: convar :: get
-*
-*   valides and returns a specified convar
-*
-*   @param  : str id
-*   @return : cvar
-*/
-
-function helper:cvar_get( id )
-    return ( isstring( id ) and ConVarExists( id ) and GetConVar( id ) ) or ( self:isconvar( id ) and id ) or false
-end
-
-/* 
-*   helper :: convar :: get name
-*
-*   valides and returns a specified convar
-*   param accepts either a str; or the convar itself
-*
-*   @param  : str id
-*   @return : cvar
-*/
-
-function helper:cvar_get_name( id )
-    local cvar = ( isstring( id ) and ConVarExists( id ) and GetConVar( id ) ) or ( ( self:isconvar( id ) and id ) ) or false
-    return cvar:GetName( )
-end
-
-/* 
-*   helper :: convar :: get helptext
-*
-*   returns the helptext for a registered convar
-*
-*   @param  : str id
-*   @return : str
-*/
-
-function helper:cvar_get_help( id )
-    local cvar = self:cvar_get( id )
-    if not cvar then return end
-    return cvar:GetHelpText( ) or lang( 'cvar_nohelp' )
-end
-
-/* 
-*   helper :: convar :: set :: int
-*
-*   @param  : str id
-*   @param  : int val
-*/
-
-function helper:cvar_set_int( id, val )
-    local cvar = self:cvar_get( id )
-    if not cvar then return end
-    cvar:SetInt( val )
-end
-
-/* 
-*   helper :: convar :: set :: str
-*
-*   @param  : str id
-*   @param  : str val
-*/
-
-function helper:cvar_set_str( id, val )
-    if not id then return end
-
-    if ( isstring( id ) and self:cvar_get( id ) ) then
-        local cvar = GetConVar( id )
-        cvar:SetString( val )
-    elseif ( self:isconvar( id ) ) then
-        id:SetString( val )
-    end
-end
-
-/* 
-*   helper :: convar :: set :: bool
-*
-*   @param  : str id
-*   @param  : bool val
-*/
-
-function helper:cvar_set_bool( id, val )
-    if not id then return end
-    val = val or false
-
-    if ( isstring( id ) and self:cvar_get( id ) ) then
-        local cvar = GetConVar( id )
-        cvar:SetBool( val )
-    elseif ( self:isconvar( id ) ) then
-        id:SetBool( val )
-    end
-end
-
-/* 
-*   helper :: convar :: set :: float
-*
-*   @param  : str id
-*   @param  : flt val
-*/
-
-function helper:cvar_set_float( id, val )
-    if not id then return end
-    val = val or 0
-
-    if ( isstring( id ) and self:cvar_get( id ) ) then
-        local cvar = GetConVar( id )
-        cvar:SetFloat( val )
-    elseif ( self:isconvar( id ) ) then
-        id:SetFloat( val )
-    end
-end
-
-/* 
-*   helper :: convar :: default
-*
-*   returns a cvar default value
-*
-*   @param  : str id
-*   @return : mix
-*/
-
-function helper:cvar_def( id )
-    return ConVarExists( id ) and GetConVar( id ):GetDefault( )
-end
-
-/* 
-*   helper :: convar :: int
-*
-*   fetches the proper int associated with a particular convar.
-*   param accepts either a str; or the convar itself
-*
-*   @param  : str id
-*   @param  : int alt
-*   @return : int
-*/
-
-function helper:cvar_int( id, alt )
-    return ( isstring( id ) and ConVarExists( id ) and GetConVar( id ):GetInt( ) ) or ( self:isconvar( id ) and id:GetInt( ) ) or self:cvar_def( id ) or alt
-end
-
-/* 
-*   helper :: convar :: str
-*
-*   fetches the proper str associated with a particular convar.
-*   param accepts either a str; or the convar itself
-*
-*   @param  : str id
-*   @param  : str alt
-*   @return : str
-*/
-
-function helper:cvar_str( id, alt )
-    return ( isstring( id ) and ConVarExists( id ) and GetConVar( id ):GetString( ) ) or ( self:isconvar( id ) and id:GetString( ) ) or self:cvar_def( id ) or alt
-end
-
-/* 
-*   helper :: convar :: str :: strict method
-*
-*   fetches the proper str associated with a particular convar.
-*
-*   @param  : str id
-*   @param  : str alt
-*   @return : str
-*/
-
-function helper:cvar_str_strict( id, alt )
-    return ConVarExists( id ) and GetConVar( id ):GetString( ) or self:cvar_def( id ) or alt
-end
-
-/* 
-*   helper :: convar :: float
-*
-*   fetches the proper float associated with a particular convar.
-*   param accepts either a str; or the convar itself
-*
-*   @param  : str, cvar id
-*   @param  : flt alt
-*   @return : flt
-*/
-
-function helper:cvar_float( id, alt )
-    return ( isstring( id ) and ConVarExists( id ) and GetConVar( id ):GetFloat( ) ) or ( self:isconvar( id ) and id:GetFloat( ) ) or self:cvar_def( id ) or alt or 0
-end
-
-/* 
-*   helper :: convar :: bool
-*
-*   fetches the proper bool associated with a particular convar.
-*   param accepts either a str; or the convar itself
-*
-*   @param  : str, cvar id
-*   @return : bool
-*/
-
-function helper:cvar_bool( id )
-    return ( isstring( id ) and ConVarExists( id ) and GetConVar( id ):GetBool( ) ) or ( self:isconvar( id ) and id:GetBool( ) ) or false
-end
-
-/* 
-*   helper :: convar :: int to bool
-*
-*   converts an int stored cvar to a bool
-*   param accepts either a str; or the convar itself
-*
-*   @param  : str, cvar id
-*   @return : bool
-*/
-
-function helper:cvar_int2bool( id )
-    return ( isstring( id ) and ConVarExists( id ) and self:int2bool( GetConVar( id ):GetInt( ) ) ) or ( self:isconvar( id ) and self:int2bool( id:GetInt( ) ) ) or false
 end
 
 /*
@@ -2579,22 +2327,22 @@ end
 function helper.util:toggle( val )
     if not val then return end
 
-    if ( type( val ) == 'string' ) then
+    if ( isstring( val ) ) then
         if ( table.HasValue( options_yes, val ) ) then
             return true
         elseif ( table.HasValue( options_no, val ) ) then
             return false
         elseif ( table.HasValue( options_huh, val ) ) then
-            base:log( 1, lang( 'convert_toggle_idiot' ) )
+            log( 1, lang( 'convert_toggle_idiot' ) )
             return false
         end
-    elseif ( type( val ) == 'number' ) then
+    elseif ( isnumber( val ) ) then
         if ( val == 1 ) then
             return true
         elseif ( val == 0 ) then
             return false
         end
-    elseif ( type( val ) == 'boolean' ) then
+    elseif ( isbool( val ) ) then
         if ( val == true ) then
             return true
         elseif ( val == false ) then
@@ -2618,22 +2366,22 @@ end
 function helper.util:humanbool( val, bOnOff )
     if not val then return end
 
-    if ( type( val ) == 'string' ) then
+    if ( isstring( val ) ) then
         if ( table.HasValue( options_yes, val ) ) then
             return not bOnOff and 'true' or 'on'
         elseif ( table.HasValue( options_no, val ) ) then
             return not bOnOff and 'false' or 'off'
         elseif ( table.HasValue( options_huh, val ) ) then
-            base:log( 1, lang( 'convert_toggle_idiot' ) )
+            log( 1, lang( 'convert_toggle_idiot' ) )
             return not bOnOff and 'false' or 'off'
         end
-    elseif ( type( val ) == 'number' ) then
+    elseif ( isnumber( val ) ) then
         if ( val == 1 ) then
             return not bOnOff and 'true' or 'on'
         elseif ( val == 0 ) then
             return not bOnOff and 'false' or 'off'
         end
-    elseif ( type( val ) == 'boolean' ) then
+    elseif ( isbool( val ) ) then
         if ( val == true ) then
             return not bOnOff and 'true' or 'on'
         elseif ( val == false ) then
@@ -2649,14 +2397,14 @@ end
 *
 *   routes a message as either a private or broadcast based on the target
 *
-*   @param  : ply ply
+*   @param  : ply pl
 *   @param  : str subcat [optional]
 *   @param  : varg { ... }
 */
 
-function base.msg:target( ply, subcat, ... )
+function base.msg:target( pl, subcat, ... )
     if not cfg or not cfg.cmsg then
-        base:log( 2, lang( 'cmsg_missing' ) )
+        log( 2, lang( 'cmsg_missing' ) )
         return
     end
 
@@ -2668,17 +2416,69 @@ function base.msg:target( ply, subcat, ... )
         args[ k ] = v .. ' '
     end
 
-    local sub_c = isstring( subcat ) and ( subcat ~= 'base' and '[' .. subcat .. '] ' ) or ( subcat == 'base' and '[' .. mf.name .. '] ' ) or mf.name
+    local sub_c = ( not helper.str:isempty( subcat ) and '[' .. subcat .. '] ' ) or '[' .. mf.name .. '] '
 
     if CLIENT then
         chat.AddText( cmsg.clrs.cat, '[' .. cmsg.tag_private .. '] ', cmsg.clrs.subcat, sub_c, cmsg.clrs.msg, unpack( args ) )
     else
-        if helper.ok.ply( ply ) then
-            ply:msg( cmsg.clrs.cat, '[' .. cmsg.tag_private .. '] ', cmsg.clrs.subcat, sub_c, cmsg.clrs.msg, unpack( args ) )
+        if helper.ok.ply( pl ) then
+            pl:umsg( cmsg.clrs.cat, '[' .. cmsg.tag_private .. '] ', cmsg.clrs.subcat, sub_c, cmsg.clrs.msg, unpack( args ) )
         else
             base:broadcast( cmsg.clrs.cat, '[' .. cmsg.tag_server .. '] ', cmsg.clrs.subcat, sub_c, cmsg.clrs.msg, unpack( args ) )
         end
     end
+end
+
+/*
+*   msg :: simple
+*
+*   sends a msg with no affixed formatting
+*
+*   @param  : ply pl
+*   @param  : varg { ... }
+*/
+
+function base.msg:simple( pl, ... )
+    local args = { ... }
+    for k, v in pairs( args ) do
+        if not isstring( v ) then continue end
+        args[ k ] = v .. ' '
+    end
+
+    if CLIENT then
+        chat.AddText( unpack( args ) )
+    else
+        if pl and pl ~= nil then
+            if base.con:Is( pl ) then
+                table.insert( args, '\n' )
+                MsgC( unpack( args ) )
+            else
+                pl:umsg( unpack( args ) )
+            end
+        else
+            base:broadcast( unpack( args ) )
+        end
+    end
+end
+
+/*
+*   msg :: th
+*
+*   posts think delay
+*
+*   @param  : ply pl
+*   @param  : clr clr
+*   @param  : str cat
+*   @param  : int delay
+*   @param  : varg { ... }
+*/
+
+function base.msg:th( pl, clr, cat, delay, ... )
+    local args  = { ... }
+    clr         = IsColor( clr ) and clr or Color( 255, 255, 255 )
+    timex.simple( delay, function( )
+        base:console( pl, clr, unpack( args ) )
+    end )
 end
 
 /*
@@ -2693,7 +2493,7 @@ end
 
 function base.msg:struct( scope, subcat, ... )
     if not cfg or not cfg.cmsg then
-        base:log( 2, lang( 'cmsg_missing' ) )
+        log( 2, lang( 'cmsg_missing' ) )
         return
     end
 
@@ -2704,8 +2504,6 @@ function base.msg:struct( scope, subcat, ... )
     if scope == 1 then
         tag = cmsg.tag_server
     end
-
-    local cmsg = cfg.cmsg
 
     local args = { ... }
     for k, v in pairs( args ) do
@@ -2721,14 +2519,14 @@ end
 *
 *   routes a message to each player as a server broadcast
 *
-*   @param  : ply ply
+*   @param  : ply pl
 *   @param  : str subcat [optional]
 *   @param  : varg { ... }
 */
 
-function base.msg:server( ply, subcat, ... )
+function base.msg:server( pl, subcat, ... )
     if not cfg or not cfg.cmsg then
-        base:log( 2, lang( 'cmsg_missing' ) )
+        log( 2, lang( 'cmsg_missing' ) )
         return false
     end
 
@@ -2743,8 +2541,8 @@ function base.msg:server( ply, subcat, ... )
     if CLIENT then
         chat.AddText( cmsg.clrs.cat, '[' .. cmsg.tag_server .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
     else
-        if helper.ok.ply( ply ) then
-            ply:msg( cmsg.clrs.cat, '[' .. cmsg.tag_server .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
+        if helper.ok.ply( pl ) then
+            pl:umsg( cmsg.clrs.cat, '[' .. cmsg.tag_server .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
         else
             base:broadcast( cmsg.clrs.cat, '[' .. cmsg.tag_server .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
         end
@@ -2764,12 +2562,12 @@ end
 *   since sending to player chat has a tendency to also add to the player console, bConsole 
 *   has been added.
 *
-*   @param  : ply ply
+*   @param  : ply pl
 *   @param  : bool bConsole
 *   @param  : varg { ... }
 */
 
-function base.msg:route( ply, bConsole, ... )
+function base.msg:route( pl, bConsole, ... )
     local args          = { ... }
     local toConsole     = isbool( bConsole ) and bConsole or false
     local subcat        = isbool( bConsole ) and args[ 1 ] or bConsole
@@ -2785,25 +2583,25 @@ function base.msg:route( ply, bConsole, ... )
     end
 
     if CLIENT then
-        chat.AddText( unpack( args ) )
+        chat.AddText( cmsg.clrs.cat, '[' .. cmsg.tag_console .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
         if toConsole then
             table.insert( args, '\n' )
             MsgC( cmsg.clrs.cat, '[' .. cmsg.tag_console .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
         end
     else
-        if ply and ply ~= nil then
-            if base:isconsole( ply ) then
+        if pl and pl ~= nil then
+            if base.con:Is( pl ) then
                 table.insert( args, '\n' )
                 MsgC( cmsg.clrs.cat, '[' .. cmsg.tag_console .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
             else
                 if toConsole then
                     table.insert( args, '\n' )
-                    ply:sendconsole( cmsg.clrs.cat, '[' .. cmsg.tag_console .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
+                    pl:konsole( cmsg.clrs.cat, '[' .. cmsg.tag_console .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
                 end
-                ply:msg( cmsg.clrs.cat, '[' .. cmsg.tag_private .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
+                pl:umsg( cmsg.clrs.cat, '[' .. cmsg.tag_private .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
             end
         else
-            rlib:broadcast( cmsg.clrs.cat, '[' .. cmsg.tag_server .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
+            base:broadcast( cmsg.clrs.cat, '[' .. cmsg.tag_server .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, unpack( args ) )
         end
     end
 end
@@ -2829,7 +2627,7 @@ end
 *           : rlib.msg:direct( nil, nil, 'hello ', rlib.settings.cmsg.clrs.target, 'everyone' )
 *                   sends a broadcast message to all players with no category prefix
 * 
-*   @param  : ply ply
+*   @param  : ply pl
 *   @param  : str subcat [optional]
 *   @param  : varg { ... }
 */
@@ -2839,7 +2637,7 @@ local function msg_prepare( ... )
     return args
 end
 
-function base.msg:direct( ply, subcat, ... )
+function base.msg:direct( pl, subcat, ... )
     local args  = { ... }
     local cmsg  = cfg.cmsg
     subcat      = isstring( subcat ) and subcat
@@ -2850,15 +2648,15 @@ function base.msg:direct( ply, subcat, ... )
     if CLIENT then
         chat.AddText( unpack( resp ) )
     else
-        if ply and ply ~= nil then
-            if base:isconsole( ply ) then
+        if pl and pl ~= nil then
+            if base.con:Is( pl ) then
                 table.insert( resp, '\n' )
                 MsgC( unpack( resp ) )
             else
-                ply:msg( cmsg.clrs.cat, '[' .. cmsg.tag_private .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, ... )
+                pl:umsg( cmsg.clrs.cat, '[' .. cmsg.tag_private .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, ... )
             end
         else
-            rlib:broadcast( cmsg.clrs.cat, '[' .. cmsg.tag_private .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, ... )
+            base:broadcast( cmsg.clrs.cat, '[' .. cmsg.tag_private .. '] ', cmsg.clrs.subcat, subcat and '[' .. subcat .. '] ' or nil, cmsg.clrs.msg, ... )
         end
     end
 end
@@ -2876,13 +2674,13 @@ end
 
 function helper.util:sid32_64( sid )
     if not sid or not helper.ok.sid32( sid ) then
-        local ret = 'nil'
+        local ret = lang( 'util_nil' )
         if sid and sid ~= nil then ret = sid end
-        base:log( 2, 'cannot convert invalid steam32 » [ %s ]', ret )
+        log( 2, lang( 'util_s32_noconvert', ret ) )
         return false
     end
 
-    sid = string.upper( sid )
+    sid             = sid:upper( )
 
     local sid_pre   = '7656'
     local segs      = string.Explode( ':', string.sub( sid, 7 ) )
@@ -2919,9 +2717,9 @@ end
 
 function helper.util:sid64_32( sid, x )
     if not sid or tonumber( sid ) == nil then
-        local ret = 'nil'
+        local ret = lang( 'util_nil' )
         if sid and sid ~= nil then ret = sid end
-        base:log( 2, 'cannot convert invalid steam64 » [ %s ]', ret )
+        log( 2, lang( 'util_s64_noconvert', ret ) )
         return false
     end
 
@@ -2991,17 +2789,17 @@ end
 /*
 *   helper :: who :: rpname
 *
-*   determines if a ply has a valid rp name
+*   determines if a pl has a valid rp name
 *
-*   @call   : helper.who:rpname( ply )
+*   @call   : helper.who:rpname( pl )
 *
-*   @param  : ply ply
+*   @param  : ply pl
 *   @return : str, bool
 */
 
-function helper.who:rpname( ply )
-    if not ply.DarkRPVars or not ply.DarkRPVars.rpname then return end
-    return ply.DarkRPVars.rpname ~= 'NULL' and ply.DarkRPVars.rpname or false
+function helper.who:rpname( pl )
+    if not pl.DarkRPVars or not pl.DarkRPVars.rpname then return end
+    return pl.DarkRPVars.rpname ~= 'NULL' and pl.DarkRPVars.rpname or false
 end
 
 /*
@@ -3019,7 +2817,7 @@ end
 
 function helper.who:rpjob( name )
     if not RPExtraTeams then
-        base:log( 2, 'darkrp table [ %s ] missing » check gamemode', 'RPExtraTeams' )
+        log( 2, lang( 'hlp_who_rp_notable' ) )
         return false
     end
 
@@ -3047,7 +2845,7 @@ end
 
 function helper.who:rpjob_wc( name )
     if not RPExtraTeams then
-        base:log( 2, 'darkrp table [ %s ] missing » check gamemode', 'RPExtraTeams' )
+        log( 2, 'darkrp table [ %s ] missing » check gamemode', 'RPExtraTeams' )
         return false
     end
 
@@ -3089,7 +2887,7 @@ end
 
 function helper.who:rpjob_custom( name, field )
     if not RPExtraTeams then
-        base:log( 2, 'darkrp table [ %s ] missing » check gamemode', 'RPExtraTeams' )
+        log( 2, 'darkrp table [ %s ] missing » check gamemode', 'RPExtraTeams' )
         return false
     end
 
@@ -3130,7 +2928,7 @@ end
 
 function helper.who:rpjob_custom_lc( name, field )
     if not RPExtraTeams then
-        base:log( 2, 'darkrp table [ %s ] missing » check gamemode', 'RPExtraTeams' )
+        log( 2, 'darkrp table [ %s ] missing » check gamemode', 'RPExtraTeams' )
         return false
     end
 
@@ -3376,12 +3174,12 @@ end
 
 function helper:table_addentry( src, entries )
     if not istable( src ) then
-        base:log( 2, 'cannot add table entries without valid table' )
+        log( 2, 'cannot add table entries without valid table' )
         return
     end
 
     if not istable( entries ) then
-        base:log( 2, 'cannot add missing entries to table' )
+        log( 2, 'cannot add missing entries to table' )
         return
     end
 
@@ -3406,7 +3204,7 @@ end
 
 function helper:table_remove( tbl, int )
     if not istable( tbl ) then
-        base:log( 2, 'cannot remove table indexes without valid table' )
+        log( 2, 'cannot remove table indexes without valid table' )
         return
     end
 
@@ -3492,19 +3290,19 @@ function konsole:add( calling_ply, itype, msg, ... )
     itype = isnumber( itype ) and itype or 1
 
     if not isstring( msg ) then
-        rlib:log( 6, 'attempt to process konsole post message with invalid msg type' )
+        log( 6, 'attempt to process konsole post message with invalid msg type' )
         return false
     end
 
-    for ply in helper.get.players( ) do
-        if not access:bIsDev( ply ) then continue end
+    for pl in helper.get.players( ) do
+        if not access:bIsDev( pl ) then continue end
         if calling_ply and not helper.ok.ply( calling_ply ) then continue end
-        if calling_ply and calling_ply ~= ply then continue end
+        if calling_ply and calling_ply ~= pl then continue end
 
         net.Start       ( 'rlib.konsole'    )
         net.WriteInt    ( itype, 4          )
         net.WriteString ( msg               )
-        net.Send        ( ply               )
+        net.Send        ( pl                )
     end
 end
 
@@ -3555,1479 +3353,35 @@ end
 *
 *   prints a message in center of the screen as well as in the users consoles.
 *
-*   @param  : ply ply      send to ply ( set nil for broadcast )
-*   @param  : str msg      msg to send
-*   @param  : clr clr      <@optional> clr for msg
-*   @param  : int dur      <@optional> amt of time to show the msg
-*   @param  : int fade     <@optional> length of fade time [ def:1 ]
+*   @param  : ply pl        send to ply ( set nil for broadcast )
+*   @param  : str msg       msg to send
+*   @param  : clr clr       <@optional> clr for msg
+*   @param  : int dur       <@optional> amt of time to show the msg
+*   @param  : int fade      <@optional> length of fade time [ def:1 ]
 */
 
-local function rsay_netlib_sv( ply, msg, clr, dur, fade )
+local function rsay_netlib_sv( pl, msg, clr, dur, fade )
     if not SERVER then return end
 
-    net.Start( 'rlib.rsay' )
-    net.WriteString( msg )
-    net.WriteColor( clr )
-    net.WriteInt( dur, 8 )
-    net.WriteInt( fade, 8 )
-    if ply then
-        net.Send( ply )
+    net.Start           ( 'rlib.rsay'   )
+    net.WriteString     ( msg           )
+    net.WriteColor      ( clr           )
+    net.WriteInt        ( dur, 8        )
+    net.WriteInt        ( fade, 8       )
+    if pl then
+        net.Send( pl )
     else
         net.Broadcast( )
     end
 end
 
-function base.rsay( ply, msg, clr, dur, fade )
-    ply     = IsValid( ply ) and ply or nil
+function base.rsay( pl, msg, clr, dur, fade )
+    pl      = IsValid( pl ) and pl or nil
     msg     = isstring( msg ) and msg or 'missing msg'
     clr     = IsColor( clr ) and clr or Color( 255, 255, 255, 255 )
     dur     = isnumber( dur ) and dur or 8
     fade    = isnumber( fade ) and fade or 1
 
-    rsay_netlib_sv( ply, msg, clr, dur, fade )
-    base:gconsole( ply, msg )
-end
-
-/*
-*   concommand :: rlib
-* 
-*   base concommand for lib which includes all help information and the ability to search for specific
-*   commands built into the library
-*   
-*   command to be used in console
-*   
-*   @usage  : rlib                        [displays full lib command list]
-*           : rlib <search_string>        [search for cmd help info]
-*           : rlib -h <search_string>     [search for cmd help info]
-*           : rlib -f <search_string>     [show only commands matching search string]
-*
-*   @ex     : rlib rlib.version
-*           : rlib version
-*           : rlib -h version
-*/
-
-function utils.cc_base( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   declarations
-    */
-
-    local arg_param     = args and args[ 1 ] or false
-    local arg_searchstr = args and args[ 2 ] or nil
-
-    local gcf_all       = rlib.calls:gcflag( 'rlib', 'all'      )
-    local gcf_filter    = rlib.calls:gcflag( 'rlib', 'filter'   )
-    local gcf_help      = rlib.calls:gcflag( 'rlib', 'help'     )
-    local gcf_simp      = rlib.calls:gcflag( 'rlib', 'simple'   )
-    local gcf_br        = rlib.calls:gcflag( 'rlib', 'break'    )
-
-    local cnt_results   = 0
-    local cnt_hidden    = 0
-
-    /*
-    *   check for a provided exact match in search arg
-    */
-
-    local result_key, result_found, result_id, result_cache = nil, false, nil, nil
-    if ( arg_param == gcf_help and arg_searchstr ) then
-        result_key = arg_searchstr
-    elseif arg_param == gcf_help and ( not arg_searchstr and arg_searchstr ~= '' ) then
-        base:console( pl, Color( 255, 255, 0 ), '' )
-        base:console( pl, Color( 255, 255, 0 ), 'Help » ', Color( 255, 255, 255 ), 'no command specified' )
-        base:console( pl, Color( 255, 255, 0 ), 'Help » ', Color( 255, 255, 255 ), 'type ', Color( 255, 255, 0 ), script .. ' -h commandname', Color( 255, 255, 255 ), ' for help on a particular command' )
-        return
-    elseif ( arg_param and arg_param ~= gcf_help ) then
-        result_key = arg_param
-    end
-
-    /*
-    *   search command list for matching search string
-    */
-
-    for k, v in pairs( rlib.calls:get( 'commands' ) ) do
-        if result_key and ( result_key == v.id or result_key == v[ 1 ] ) then
-            result_id, result_found = k, true
-            if result_key == v[ 1 ] then
-                result_id = v[ 1 ]
-                result_cache = k
-            end
-            break
-        end
-    end
-
-    /*
-    *   search :: subset
-    *
-    *   if no results are found in the initial search, look for any mention of the search string in
-    *   the list of registred rlib commands
-    *
-    *   @ex     search string:
-    *               ::  rlib rlib.help
-    *                   returns help command results
-    *           
-    *               ::  rlib help
-    *                   returns help command results (same as first ex)
-    */
-
-    if result_key and not result_found then
-        for k, v in pairs( rlib.calls:get( 'commands' ) ) do
-            if not string.match( k, result_key ) then continue end
-            result_id, result_found = k, true
-            if result_key == v[ 1 ] then
-                result_id = v[ 1 ]
-                result_cache = k
-            end
-            break
-        end
-    end
-
-    /*
-    *   error :: -f flag with no search string
-    */
-
-    if ( arg_param == gcf_filter and not arg_searchstr ) then
-        base:console( pl, Color( 255, 255, 0 ), '' )
-        base:console( pl, Color( 255, 255, 0 ), 'Help » ', Color( 255, 255, 255 ), 'No search term specified' )
-        base:console( pl, Color( 255, 255, 0 ), 'Help » ', Color( 255, 255, 255 ), 'Syntax: ', Color( 255, 255, 0 ), script .. ' ' .. gcf_filter .. ' <search_keyword>' )
-        return
-    end
-
-    /*
-    *   error :: invalid flag specified
-    */
-
-    if not result_found and arg_param and helper.str:startsw( arg_param, '-' ) and not base.calls:gcflag_valid( ccmd.id, arg_param ) then
-        local val_search = arg_param or 'unspecified'
-        base:console( pl, Color( 255, 255, 0 ), '' )
-        base:console( pl, Color( 255, 255, 0 ), 'Help » ', Color( 255, 0, 0 ), val_search, Color( 255, 255, 255 ), ' is not a valid flag' )
-        base:console( pl, Color( 255, 255, 0 ), 'Help » ', Color( 255, 255, 255 ), 'type ', Color( 255, 255, 0 ), script, Color( 255, 255, 255 ), ' for a list of registered commands' )
-        base:console( pl, '' )
-        return
-    end
-
-    /*
-    *   error :: no result but param
-    */
-
-    if not result_found and ( arg_param and not base.calls:gcflag_valid( ccmd.id, arg_param ) ) then
-        local val_search = arg_searchstr or arg_param
-        base:console( pl, Color( 255, 255, 0 ), '' )
-        base:console( pl, Color( 255, 255, 0 ), 'Help » ', Color( 255, 0, 0 ), val_search, Color( 255, 255, 255 ), ' is not a valid command' )
-        base:console( pl, Color( 255, 255, 0 ), 'Help » ', Color( 255, 255, 255 ), 'type ', Color( 255, 255, 0 ), script, Color( 255, 255, 255 ), ' for a list of registered commands' )
-        base:console( pl, '' )
-        return
-    end
-
-    /*
-    *   output :: specific command result
-    *
-    *   output the result of the searched console command
-    *   run this before anything else so we can keep annoying header prints from appearing for each and
-    *   every command result which should only show at the top level
-    */
-
-    if result_found then
-        local item      = base.calls:get( 'commands', result_id )
-        local id        = ( item and item.id ) or result_id
-        local desc      = ( item and item.desc ) or ( item and result_cache and item[ result_cache ][ 2 ] ) or 'no information provided'
-
-        base:console( pl, '\n' )
-        base:console( pl, Color( 255, 255, 0 ), 'Help', Color( 255, 0, 255 ), ' » ', Color( 255, 255, 0 ), 'Command', Color( 255, 0, 255 ), ' » ', Color( 255, 255, 255 ), id )
-        base:console( pl, lang( 'sym_sp' ) )
-        base:console( pl, Color( 255, 255, 255 ), desc .. '\n' )
-
-        /*
-        *   command arguments
-        */
-
-        if item.args and item.args ~= '' then
-            local args_lbl_1        = sf( '%-15s', 'SYNTAX' )
-            local args_data_1       = sf( '%-35s',    '' )
-            local args_lbl_2        = sf( '%-5s', '' )
-            local args_data_2       = sf( '%-35s', '   ' .. item.args )
-
-            base:console( pl, Color( 255, 255, 0 ), args_lbl_1, Color( 255, 255, 255 ), args_data_1 )
-            base:console( pl, Color( 255, 255, 0 ), args_lbl_2, Color( 255, 255, 255 ), args_data_2 .. '\n' )
-        end
-
-        /*
-        *   command is_base
-        */
-
-        if item.is_base then
-            base:console( pl )
-
-            local crit_lbl_1        = sf( '%-15s', 'BASE' )
-            local crit_data_1       = sf( '%-35s', '' )
-            local crit_lbl_2        = sf( '%-5s', '' )
-            local crit_data_2       = sf( '%-35s', '   This is the base command for ' .. script )
-
-            base:console( pl, Color( 255, 0, 255 ), crit_lbl_1, Color( 255, 255, 255 ), crit_data_1 )
-            base:console( pl, Color( 255, 255, 0 ), crit_lbl_2, Color( 255, 255, 255 ), crit_data_2 .. '\n' )
-        end
-
-        /*
-        *   command scope
-        */
-
-        if isnumber( item.scope ) then
-            local scope_lbl_1       = sf( '%-15s', 'SCOPE' )
-            local scope_data_1      = sf( '%-35s', '' )
-            local scope_lbl_2       = sf( '%-5s', '' )
-            local scope_data_2      = sf( '%-35s', '   ' .. base._def.scopes[ item.scope ] or 'unknown' )
-
-            base:console( pl, Color( 255, 255, 0 ), scope_lbl_1, Color( 255, 255, 255 ), scope_data_1 )
-            base:console( pl, Color( 255, 255, 0 ), scope_lbl_2, Color( 255, 255, 255 ), scope_data_2 .. '\n' )
-        end
-
-        /*
-        *   command flags
-        */
-
-        if item.flags and istable( item.flags ) then
-            local flags_lbl_1       = sf( '%-15s', 'FLAGS' )
-            local flags_lbl_2       = sf( '%-35s', '' )
-
-            base:console( pl, Color( 255, 255, 0 ), flags_lbl_1, Color( 255, 255, 255 ), flags_lbl_2 )
-
-            for k, v in SortedPairs( item.flags ) do
-                local i_flag        = v.flag or '-'
-                local i_desc        = v.desc or 'no desc'
-
-                local flags_data_1  = sf( '%-5s', '' )
-                local flags_data_2  = sf( '%-15s', '   ' .. i_flag )
-                local flags_data_3  = sf( '%-35s', i_desc )
-                local flags_op      = flags_data_1 .. flags_data_2 .. flags_data_3
-
-                base:console( pl, Color( 255, 255, 255 ), flags_op )
-            end
-            base:console( pl, Color( 255, 255, 0 ), '' )
-        end
-
-        /*
-        *   command examples
-        */
-
-        if item.ex and istable( item.ex ) then
-            local ex_lbl_1 = sf( '%-15s', 'EXAMPLES' )
-            base:console( pl, Color( 255, 255, 0 ), ex_lbl_1 )
-            for k, v in pairs( item.ex ) do
-                local ex_data_1     = sf( '%-5s', '' )
-                local ex_data_2     = sf( '%-35s', '   ' .. v )
-                local ex_op         = ex_data_1 .. ex_data_2
-
-                base:console( pl, Color( 255, 255, 255 ), ex_op )
-            end
-        end
-
-        /*
-        *   command notes
-        */
-
-        if item.notes and istable( item.notes ) then
-            base:console( pl )
-
-            local n_lbl_1 = sf( '%-15s', 'NOTES' )
-            base:console( pl, Color( 255, 255, 0 ), n_lbl_1 )
-            for k, v in pairs( item.notes ) do
-                local n_data_1      = sf( '%-5s', '' )
-                local n_data_2      = sf( '%-35s', '   ' .. v )
-                local n_op          = n_data_1 .. n_data_2
-
-                base:console( pl, Color( 255, 255, 255 ), n_op )
-            end
-        end
-
-        /*
-        *   command hiddem
-        */
-
-        if item.is_hidden then
-            base:console( pl )
-
-            local hid_lbl_1     = sf( '%-15s', 'HIDDEN' )
-            local hid_lbl_2     = sf( '%-5s', '' )
-            local hid_data_1    = sf( '%-35s', '' )
-            local hid_data_2    = sf( '%-35s', '   This command is hidden from the main directory list.' )
-
-            base:console( pl, Color( 255, 0, 0 ), hid_lbl_1, Color( 255, 255, 255 ), hid_data_1 )
-            base:console( pl, Color( 255, 255, 0 ), hid_lbl_2, Color( 255, 255, 255 ), hid_data_2 .. '\n' )
-        end
-
-        /*
-        *   command warn
-        */
-
-        if item.warn then
-            base:console( pl )
-
-            local crit_lbl_1    = sf( '%-15s',      'WARNING' )
-            local crit_lbl_2    = sf( '%-5s',       '' )
-            local crit_data_1   = sf( '%-35s',      '' )
-            local crit_data_2   = sf( '%-35s',      '   Only used at developers direction. Misuse may cause server / data damage.' )
-
-            base:console( pl, Color( 255, 0, 0 ), crit_lbl_1, Color( 255, 255, 255 ), crit_data_1 )
-            base:console( pl, Color( 255, 255, 0 ), crit_lbl_2, Color( 255, 255, 255 ), crit_data_2 .. '\n' )
-        end
-
-        /*
-        *   command deny server-side execution
-        */
-
-        if item.no_console then
-            base:console( pl )
-
-            local crit_lbl_1    = sf( '%-15s',      'NOTICE' )
-            local crit_lbl_2    = sf( '%-5s',       '' )
-            local crit_data_1   = sf( '%-35s',      '' )
-            local crit_data_2   = sf( '%-35s',      '   Command must have a valid player to execute. Server console cannot run.' )
-
-            base:console( pl, Color( 255, 0, 255 ), crit_lbl_1, Color( 255, 255, 255 ), crit_data_1 )
-            base:console( pl, Color( 255, 255, 0 ), crit_lbl_2, Color( 255, 255, 255 ), crit_data_2 .. '\n' )
-        end
-
-        base:console( pl, lang( 'sym_sp' ) )
-
-        return false
-    end
-
-    /*
-    *   output :: header
-    */
-
-    local tbl_about = helper.str:wordwrap( mf.about, 90 )
-
-    base:console( pl, '\n' )
-    base:console( pl, Color( 255, 255, 0 ), script, Color( 255, 0, 255 ), ' » ', Color( 255, 255, 255 ), 'Help' )
-    base:console( pl, lang( 'sym_sp' ) )
-    for k, v in pairs( tbl_about ) do
-        base:console( pl, Color( 255, 255, 255 ), v )
-    end
-    base:console( pl, lang( 'sym_sp' ) )
-
-    /*
-    *   output :: search string
-    *
-    *   displays the string being located if flag and search string provided
-    */
-
-    if ( arg_param == gcf_filter ) and arg_searchstr then
-        base:console( pl, Color( 255, 255, 255 ), 'Searching with match: ' .. arg_searchstr .. '\n' )
-    end
-
-    /*
-    *   output :: header columns
-    */
-
-    local c1_lbl    = sf( '%-35s',      'Command' )
-    local sp_lbl    = sf( '%-5s',       '' )
-    local c2_lbl    = sf( '%-35s',      'Description' )
-    local suboutput = sf( '%s %s %s', c1_lbl, sp_lbl, c2_lbl )
-
-    base:console( pl, Color( 255, 0, 0 ), suboutput .. '\n' )
-
-    /*
-    *   output :: results
-    */
-
-    for k, v in helper:sortedkeys( base.calls:get( 'commands' ) ) do
-        if not ( arg_param == gcf_all ) and ( SERVER and v.scope == 3 or CLIENT and v.scope == 1 ) then
-            cnt_hidden = cnt_hidden + 1
-            continue
-        end
-        if ( arg_param ~= gcf_all ) and v.is_hidden then cnt_hidden = cnt_hidden + 1 continue end
-        if arg_param == gcf_filter and arg_searchstr and not string.match( k, arg_searchstr ) then continue end
-
-        local id    = v.id or v[ 1 ] or 'no id'
-        local desc  = v.desc or v[ 2 ] or lang( 'cmd_no_desc' )
-
-        local c1_data, c2_data, c0_data = '', '', ''
-        c1_data = sf( '%-35s', id )
-        sp_data = sf( '%-5s', '»' )
-
-        local data_desc = helper.str:wordwrap( desc, 128 )
-
-        c2_data = sf( '%-35s', '   ' .. data_desc[ 1 ] ) -- return first line of command description
-
-        -- clrs all commands that match lib name a different clr from others
-        local clr_cmd = Color( 255, 255, 255 )
-        if string.match( id, script ) or string.match( id, prefix ) then
-            clr_cmd = Color( 255, 0, 255 )
-        elseif rcore and string.match( id, rcore.manifest.prefix ) then
-            clr_cmd = Color( 0, 255, 0 )
-        elseif v.clr and IsColor( v.clr ) then
-            clr_cmd = v.clr
-        end
-
-        base:console( pl, Color( 255, 255, 0 ), c0_data, clr_cmd, c1_data, Color( 255, 255, 0 ), sp_data, Color( 255, 255, 255 ), c2_data )
-
-        if arg_param ~= gcf_simp then
-            for l, m in pairs( data_desc ) do
-                if l == 1 then continue end -- hide the first line, already called in the initial call
-                local val = tostring( m ) or 'missing'
-
-                local l1_data = sf( '%-25s', '' )
-                local l2_data = sf( '%-35s', '   ' .. val )
-
-                base:console( pl, Color( 255, 255, 0 ), l1_data, Color( 255, 255, 255 ), '    ', Color( 255, 255, 255 ), l2_data )
-            end
-        end
-
-        if arg_param == gcf_br then
-            base:console( pl, '' )
-        end
-
-        cnt_results = cnt_results + 1
-    end
-
-    /*
-    *   output :: footer
-    */
-
-    base:console( pl, lang( 'sym_sp' ) )
-    base:console( pl, Color( 255, 0, 255 ), '\n Results: ' .. cnt_results )
-    base:console( pl, Color( 255, 0, 255 ), 'Hidden: ' .. cnt_hidden )
-    base:console( pl, '\n' )
-
-end
-
-/*
-*   concommand :: access
-*
-*   returns a targets current access to the library
-*/
-
-function utils.cc_access( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_access' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   functionality
-    */
-
-    if base:isconsole( pl ) then
-        rlib:log( 1, 'You are [ %s ], a god-like particle that floats around with infinite permissions.', 'CONSOLE' )
-        return
-    end
-
-    /*
-    *   validate player
-    */
-
-    if not helper.ok.ply( pl ) then return end
-
-    /*
-    *   get users group
-    */
-
-    local ugroup = helper.ply.ugroup( pl )
-
-    /*
-    *   is developer
-    */
-
-    if access:bIsDev( pl ) then
-        base.msg:target( pl, script, 'I recognize you as ', cfg.cmsg.clrs.target_tri, 'developer' )
-        return
-    end
-
-    /*
-    *   is owner
-    */
-
-    if access:bIsOwner( pl ) then
-        base.msg:target( pl, script, 'I recognize you as ', cfg.cmsg.clrs.target, 'owner' )
-        return
-    end
-
-    /*
-    *   response
-    */
-
-    if ugroup and ugroup ~= 'user' then
-        base.msg:target( pl, script, 'Your usergroup on the server is ', cfg.cmsg.clrs.target, ugroup )
-    else
-        base.msg:target( pl, script, 'You have ', cfg.cmsg.clrs.target_sec, 'no access' )
-    end
-
-end
-
-/*
-*   concommand :: services
-*
-*   returns a list of all registered calls associated to rlib / rcore
-*
-*   @usage : rlib.services <returns all services>
-*   @usage : rlib.services -s termhere <returns services matching search term>
-*/
-
-function utils.cc_services( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_services' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then return end
-
-    /*
-    *   functionality
-    */
-
-    local arg_param         = args and args[ 1 ] or false
-    local arg_searchstr     = args and args[ 2 ] or nil
-    local cnt_entries       = 0
-
-    local output = sf( '\n\n [ %s ] :: services', script )
-    if arg_param then
-        if arg_param == script then
-            output = sf( '\n\n [ %s ] :: call definitions [ %s library only ]', script, script )
-        elseif arg_param == '-r' then
-            output = sf( '\n\n [ %s ] :: call definitions :: raw', script, script )
-        end
-    end
-
-    base:console( pl, output )
-
-    /*
-    *   loop services table
-    */
-
-    local cat_islisted, cat_id = false, ''
-    local tbl_calls = _G.rcalls
-
-    if arg_param then
-        if arg_param == script then
-            tbl_calls = rlib.c
-        else
-            if arg_param == '-s' and arg_searchstr then
-                base:console( pl, Color( 255, 0, 0 ), lang( 'search_term', arg_searchstr ) )
-            end
-        end
-    end
-
-    base:console( pl, '\n' )
-
-    local tbl_services =
-    {
-        {
-            id      = lang( 'services_id_udm' ),
-            desc    = 'update service runs periodic checks for issues and outdated files',
-            chk = function( )
-                if not timex.exists( pid( 'udm.notice' ) ) then return 'stopped' end
-                return 'running'
-            end,
-        },
-        {
-            id      = lang( 'services_id_pco' ),
-            desc    = 'player-client-optimization',
-            chk = function( )
-                if not helper:cvar_bool( 'rlib_pco' ) then return 'stopped' end
-                return 'running'
-            end,
-        },
-        {
-            id      = lang( 'services_id_rdo' ),
-            desc    = 'render-distance-optimization',
-            chk = function( )
-                if not cfg.rdo.enabled then return 'stopped' end
-                return 'running'
-            end,
-        },
-        {
-            id      = lang( 'services_id_oort' ),
-            desc    = 'oort engine',
-            chk = function( )
-                if not cfg.protection then return 'stopped' end
-                if not istable( oort ) or not oort.bInitialized then return 'failed' end
-                return 'running'
-            end,
-        },
-    }
-
-    local cnt = 0
-    for m in helper.get.data( tbl_services ) do
-        local status    = m.chk( ) or lang( 'services_status_warn' )
-        local id        = tostring( m.id )
-        local desc      = tostring( m.desc )
-        local val       = isstring( status ) and status or isbool( status ) and lang( 'services_status_running' ) or lang( 'services_status_stopped' )
-
-        local c1_data, c2_data, cs_data = '', '', ''
-        c1_data = sf( '%-15s', id )
-        cs_data = sf( '%-5s', ' » ' )
-        c2_data = sf( '%-15s', val )
-        c3_data = sf( '%-25s', desc )
-
-        base:console( pl, Color( 255, 255, 0 ), c1_data, Color( 255, 0, 255 ), cs_data, Color( 255, 255, 255 ), c2_data, Color( 255, 255, 255 ), c3_data )
-
-        cnt = cnt + 1
-    end
-
-    base:console( pl, '\n' .. lang( 'sym_sp' ) )
-    local c_ftr = sf( lang( 'services_found_cnt', cnt ) )
-    base:console( pl, Color( 0, 255, 0 ), c_ftr )
-    base:console( pl, lang( 'sym_sp' ) )
-
-end
-
-/*
-*   concommand :: reload
-*/
-
-function utils.cc_reload( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_reload' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not rlib:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   declarations
-    */
-
-    local arg_param         = args and args[ 1 ] or nil
-    arg_param               = arg_param and arg_param:lower( ) or nil
-
-    if not arg_param then
-        base.msg:route( pl, false, ccmd.id, 'Module name not specified' )
-        return
-    end
-
-    /*
-    *   check :: rcore missing
-    */
-
-    if not rcore then
-        base.msg:route( pl, false, ccmd.id, 'An issue has occured with', cfg.cmsg.clrs.target, 'rcore', cfg.cmsg.clrs.msg )
-        return
-    end
-
-    /*
-    *   action :: reload rcore
-    */
-
-    if arg_param == 'rcore' then
-        rlib.autoload:Run( rcore )
-        base.msg:route( pl, false, ccmd.id, 'Reloading rcore base. This may cause issues' )
-        return
-    end
-
-    /*
-    *   declare :: specific module
-    */
-
-    local folder            = rcore.manifest.modpath
-    local iRes              = 0
-    local mnfst_path        = nil
-
-    local _, sub_dir        = file.Find( folder .. '/' .. '*', 'LUA' )
-    for l, m in pairs( sub_dir ) do
-        if m ~= arg_param then continue end
-        mnfst_path = folder .. '/' .. m
-
-        iRes = iRes + 1
-    end
-
-    /*
-    *   check :: no matching modules found
-    */
-
-    if iRes < 1 then
-        base.msg:route( pl, false, ccmd.id, 'No specified module found with name', cfg.cmsg.clrs.target, arg_param, cfg.cmsg.clrs.msg )
-        return
-    end
-
-    /*
-    *   locate specified module manifest file
-    */
-
-    for l, m in pairs( sub_dir ) do
-        if m ~= arg_param then continue end
-        for _, sub_f in SortedPairs( file.Find( mnfst_path .. '/*.lua', 'LUA' ), true ) do
-            if not string.match( sub_f, 'manifest' ) and not string.match( sub_f, 'define' ) and not string.match( sub_f, 'pkg' ) then continue end
-
-            local incfile = mnfst_path .. '/' .. sub_f
-            if not incfile then continue end
-
-            if SERVER then AddCSLuaFile( incfile ) end
-            include( incfile )
-
-            rcore:module_register( mnfst_path, sub_f, true )
-        end
-    end
-
-    /*
-    *   load msg
-    */
-
-    base.msg:route( pl, false, ccmd.id, 'reloaded module', cfg.cmsg.clrs.target, arg_param )
-
-end
-
-/*
-*   concommand :: version
-*
-*   outputs version of rlib running.
-*/
-
-function utils.cc_version( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_version' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   functionality
-    */
-
-    if not script or not version then return end
-
-    base.msg:route( pl, false, script, cfg.cmsg.clrs.target, 'v' .. base.get:versionstr( ) .. ' [' .. os.date( '%m.%d.%Y', mf.released ) .. ']' )
-
-end
-
-/*
-*   concommand :: manifest
-*
-*   displays more detailed info about rlib
-*/
-
-function utils.cc_manifest( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_manifest' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   functionality
-    */
-
-    base:console( pl, lang( 'sym_sp' ) )
-
-    local mf1_lbl = sf( '%-20s', 'rlib » manifest' )
-
-    base:console( pl, Color( 255, 0, 0 ), mf1_lbl )
-    base:console( pl, lang( 'sym_sp' ) )
-
-    local tbl_about = helper.str:wordwrap( mf.about, 64 )
-
-    for l, m in SortedPairs( mf ) do
-        if istable( m ) then continue end
-
-        local mf1_data, mf2_data, mfs_data = '', '', ''
-        if l == 'about' then
-            mf1_data = sf( '%-20s', tostring( l ) )
-            mfs_data = sf( '%-5s', ' » ' )
-            mf2_data = sf( '%-15s', tbl_about[ 1 ] )
-
-            base:console( pl, Color( 255, 255, 0 ), mf1_data, Color( 255, 0, 255 ), mfs_data, Color( 255, 255, 255 ), mf2_data )
-
-            for k, v in pairs( tbl_about ) do
-                if k == 1 then continue end -- hide the first line, already called in the initial col
-                local l1_data = sf( '%-20s', '' )
-                local l2_data = sf( '%-15s', tostring( v ) )
-
-                base:console( pl, Color( 255, 255, 0 ), l1_data, Color( 255, 255, 255 ), '    ', Color( 255, 255, 255 ), l2_data )
-            end
-        else
-            mf1_data = sf( '%-20s', tostring( l ) )
-            mfs_data = sf( '%-5s', ' » ' )
-            mf2_data = sf( '%-15s', tostring( m ) )
-
-            base:console( pl, Color( 255, 255, 0 ), mf1_data, Color( 255, 0, 255 ), mfs_data, Color( 255, 255, 255 ), mf2_data )
-        end
-    end
-
-    base:console( pl, lang( 'sym_sp' ) )
-
-end
-
-/*
-*   concommand :: help
-*
-*   returns support info
-*/
-
-function utils.cc_help( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_help' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-    
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   functionality
-    */
-
-    base:console( pl, lang( 'sym_sp' ) )
-
-    local h1_lbl = sf( '%-20s', 'rlib » help' )
-    local h2_lbl = sf( '%-15s', '' )
-    local h0_lbl = h1_lbl .. ' ' .. h2_lbl
-
-    base:console( pl, Color( 255, 0, 0 ), h0_lbl )
-    base:console( pl, lang( 'sym_sp' ) )
-
-    local help_output = sf( ' For more help related to %s, you can visit our website for documentation or to get\n an updated version at:\n', script )
-    base:console( pl, Color( 255, 255, 255 ), help_output )
-
-    local tbl_help =
-    {
-        { id = 'Docs',  val = mf.docs or 'not specified' },
-        { id = 'Repo',  val = mf.repo or 'not specified' },
-        { id = 'Site',  val = mf.site or 'not specified' },
-    }
-
-    for l, m in SortedPairs( tbl_help ) do
-        local id    = tostring( m.id )
-        local val   = tostring( m.val )
-
-        local c1_data, c2_data, cs_data = '', '', ''
-        c1_data = sf( '%-15s', id )
-        cs_data = sf( '%-5s', ' » ' )
-        c2_data = sf( '%-15s', val )
-
-        base:console( pl, Color( 255, 255, 0 ), c1_data, Color( 255, 0, 255 ), cs_data, Color( 255, 255, 255 ), c2_data )
-    end
-
-    local base_cmd
-    for v in helper.get.data( base.calls:get( 'commands' ) ) do
-        if not v.is_base then continue end
-        base_cmd = v.id
-    end
-
-    base:console( pl, Color( 255, 255, 0 ), '\n' )
-    base:console( pl, Color( 255, 255, 0 ), 'Help » ', Color( 255, 255, 255 ), 'Access the command list by typing ', Color( 0, 255, 0 ), base_cmd, Color( 255, 255, 255 ), ' in console'  )
-    base:console( pl, Color( 255, 255, 0 ), 'Help » ', Color( 255, 255, 255 ), 'Syntax: ', Color( 0, 255, 0 ), base_cmd )
-
-    base:console( pl, lang( 'sym_sp' ) )
-
-end
-
-/*
-*   concommand :: languages
-*
-*   returns information related to language entries
-*/
-
-function utils.cc_languages( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_languages' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   functionality
-    */
-
-    base:console( pl, '\n' )
-
-    local id_cat    = script or mf.name
-    local id_subcat = ccmd.title or ccmd.name or lang( 'untitled' )
-
-    local i1_lbl    = sf( ' %s » %s', id_cat, id_subcat )
-    local i2_lbl    = sf( '%-15s', '' )
-    local i0_lbl    = sf( '%s %s', i1_lbl, i2_lbl )
-
-    base:console( pl, Color( 255, 0, 0 ), i0_lbl )
-    base:console( pl, lang( 'sym_sp' ) )
-
-    /*
-    *   output
-    */
-
-    local cnt_entries = 0
-    for k, v in pairs( base.language ) do
-        for l, m in pairs( v ) do
-            cnt_entries = cnt_entries + 1
-        end
-    end
-
-    local tbl_stats =
-    {
-        { id = lang( 'languages' ),     val = table.Count( base.language ) },
-        { id = lang( 'entries' ),       val = cnt_entries },
-    }
-
-    for m in helper.get.data( tbl_stats ) do
-        local id    = tostring( m.id )
-        local val   = tostring( m.val )
-
-        local c1_data, c2_data, cs_data = '', '', ''
-        c1_data = sf( '%-20s', id )
-        cs_data = sf( '%-5s', ' » ' )
-        c2_data = sf( '%-15s', val )
-
-        base:console( pl, Color( 255, 255, 0 ), c1_data, Color( 255, 0, 255 ), cs_data, Color( 255, 255, 255 ), c2_data )
-    end
-
-    /*
-    *   rcore language entries
-    */
-
-    local r1_lbl    = sf( ' rcore » language entries' )
-    local r2_lbl    = sf( '%-15s', '' )
-    local r0_lbl    = sf( '%s %s', r1_lbl, r2_lbl )
-
-    base:console( pl, ' \n' )
-    base:console( pl, Color( 255, 0, 0 ), r0_lbl )
-    base:console( pl, lang( 'sym_sp' ) )
-
-    local r1_col, r2_col, r3_col, rs_col = '', '', '', ''
-    r1_col = sf( '%-20s', lang( 'col_module' ) )
-    r2_col = sf( '%-15s', lang( 'col_language' ) )
-    rs_col = sf( '%-5s', '»' )
-    r3_col = sf( '%-15s', lang( 'col_entries' ) )
-
-    local column_layout = sf( ' %s%s%s%s', r1_col, r2_col, rs_col, r3_col )
-    base:console( pl, Color( 255, 255, 255 ), column_layout )
-    base:console( pl, lang( 'sym_sp' ) )
-
-    if not istable( rcore ) then
-        base:console( pl, Color( 255, 0, 0 ), ' ', Color( 255, 0, 0 ), lang( 'lang_rcore_missing' ) )
-        return
-    end
-
-    local i = 0
-    for k, v in SortedPairs( rcore.modules, false ) do
-        if not v.language then continue end
-        for t, l in SortedPairs( v.language, false ) do
-            if not istable( l ) then continue end
-
-            local translated = sf( '%i', helper.countdata( l, 1 )( ) )
-            local r1_data, r2_data, r3_data, rs_data = '', '', '', ''
-            r1_data = sf( '%-20s', helper.str:truncate( v.name, 15 ) )
-            r2_data = sf( '%-15s', t )
-            rs_data = sf( '%-5s', '»' )
-            r3_data = sf( '%-15s', translated )
-
-            local column_data = sf( ' %s%s%s%s', r1_data, r2_data, rs_data, r3_data )
-            base:console( pl, Color( 255, 255, 0 ), column_data )
-
-            -- total number of entries for all modules combined
-            i = i + helper.countdata( l, 1 )( )
-        end
-    end
-
-    local f1_data, f2_data, f3_data, fs_data = '', '', '', ''
-    f1_data = sf( '%-20s', '' )
-    f2_data = sf( '%-15s', '' )
-    fs_data = sf( '%-5s', '»' )
-    f3_data = sf( '%-15s', lang( 'stats_total_cnt', i ) )
-
-    local footer_layout = sf( '\n%s%s %s%s', f1_data, f2_data, fs_data, f3_data )
-    base:console( pl, Color( 255, 0, 255 ), footer_layout )
-    base:console( pl, lang( 'sym_sp' ) )
-
-end
-
-/*
-*   concommand :: debug :: enable
-*
-*   turns debug mode on for a duration of time specified and then automatically turns it off after the
-*   timer has expired.
-*/
-
-function utils.cc_debug( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_debug' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    local time_id   = pid( 'debug.delay' )
-    local status    = args and args[ 1 ] or false
-    local duration  = args and args[ 2 ] or cfg.debug.time_default
-
-    if status then
-        local param_status = helper.util:toggle( status )
-        if param_status then
-            if timex.exists( time_id ) then
-                local remains = timex.secs.sh_cols_steps( timex.remains( time_id ) ) or 0
-                base:log( 4, lang( 'debug_enabled_already', remains ) )
-                return
-            end
-
-            if duration and not helper:bIsNum( duration ) then
-                base:log( 2, lang( 'debug_err_duration' ) )
-                return
-            end
-
-            cfg.debug.enabled = true
-            base:log( 4, lang( 'debug_set_enabled_dur', duration ) )
-            if CLIENT then
-                konsole:notifyall( 6, lang( 'debug_set_notify_enabled_dur', duration ) )
-            end
-
-            timex.create( time_id, duration, 1, function( )
-                base:log( 4, lang( 'debug_auto_disable' ) )
-                cfg.debug.enabled = false
-
-                if CLIENT then
-                    konsole:notifyall( 4, lang( 'debug_auto_notify_disable' ) )
-                end
-            end )
-        else
-            timex.expire( time_id )
-            cfg.debug.enabled = false
-            base:log( 4, lang( 'debug_set_disabled' ) )
-            if CLIENT then
-                konsole:notifyall( 4, lang( 'debug_set_notify_disabled' ) )
-            end
-        end
-    else
-        if cfg.debug.enabled then
-            if timex.exists( time_id ) then
-                local remains = timex.secs.sh_cols_steps( timex.remains( time_id ) ) or 0
-                base:log( 4, lang( 'debug_enabled_time', remains ) )
-            else
-                base:log( 4, lang( 'debug_enabled' ) )
-            end
-            return
-        else
-            base:log( 1, lang( 'debug_disabled' ) )
-        end
-
-        base:log( 1, lang( 'debug_help_info_1' ) )
-        base:log( 1, lang( 'debug_help_info_2' ) )
-    end
-end
-
-/*
-*   concommand :: debug :: check status
-*
-*   checks the status of debug mode
-*/
-
-function utils.cc_debug_status( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_debug_status' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   functionality
-    */
-
-    local dbtimer   = timex.remains( pid( 'debug.delay' ) ) or false
-    local status    = cfg.debug.enabled and lang( 'opt_enabled' ) or lang( 'opt_disabled' )
-
-    base:log( 1, lang( 'debug_status', status ) )
-
-    if dbtimer then
-        base:log( 1, lang( 'debug_auto_remains', timex.secs.sh_cols_steps( dbtimer ) ) )
-    end
-end
-
-/*
-*   concommand :: debug :: devop
-*
-*   executes devop hook
-*/
-
-function utils.cc_debug_devop( pl, ... )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_debug_devop' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-end
-
-/*
-*   concommand :: admins
-*
-*   returns a list of steamids who have access to rlib as a developer
-*/
-
-function utils.cc_admins( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_admins' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    local struct = access:getusers( ) or { }
-
-    /*
-    *   functionality
-    */
-
-    base:console( pl, lang( 'sym_sp' ) )
-
-    local dv1_lbl = sf( '%-25s', ' name'    )
-    local dv2_lbl = sf( '%-5s', ' » ' )
-    local dv3_lbl = sf( '%-26s', 'steamid' )
-    local dv4_lbl = sf( '%-13s', 'added' )
-    local dv5_lbl = sf( '%-13s', 'last seen' )
-    local dv6_lbl = sf( '%-15s', 'connections' )
-
-    local dv0_lbl = sf( '%s%s%s%s%s%s', dv1_lbl, dv2_lbl, dv3_lbl, dv4_lbl, dv5_lbl, dv6_lbl )
-
-    base:console( pl, Color( 255, 0, 0 ), dv0_lbl )
-    base:console( pl, lang( 'sym_sp' ) )
-
-    local admins = struct
-    local cnt_admins = table.Count( admins ) or 0
-    if cnt_admins < 1 then
-        base:console( pl, Color( 255, 255, 0 ), ' No admins registered with ' .. mf.name )
-        base:console( pl, lang( 'sym_sp' ) )
-        return
-    end
-
-    for l, m in SortedPairs( admins ) do
-        local dv1_data, dv3_data, dv2_data, dv4_data, dv5_data
-        dv1_data = sf( '%-25s', m.name )
-        dv2_data = sf( '%-5s', ' » ' )
-        dv3_data = sf( '%-26s', l )
-        dv4_data = sf( '%-13s', ( m.date_added ~= 0 and os.date( '%m-%d-%y', m.date_added ) ) or lang( 'timestamp_never' ) )
-        dv5_data = sf( '%-13s', ( m.date_seen ~= 0 and os.date( '%m-%d-%y', m.date_seen ) ) or lang( 'timestamp_never' ) )
-        dv6_data = sf( '%-15s', m.conn or 0 )
-
-        local clr_player = not m.is_root and Color( 255, 255, 255 ) or Color( 255, 0, 255 )
-
-        base:console( pl, clr_player, dv1_data, Color( 255, 0, 255 ), dv2_data, Color( 255, 255, 255 ), dv3_data, Color( 255, 255, 255 ), dv4_data, Color( 255, 255, 255 ), dv5_data, Color( 255, 255, 255 ), dv6_data )
-    end
-
-    base:console( pl, lang( 'sym_sp' ) )
-
-end
-
-/*
-*   concommand :: uptime
-*
-*   displays the current uptime of the server
-*/
-
-function utils.cc_uptime( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_uptime' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   functionality
-    */
-
-    local uptime = timex.secs.sh_cols( SysTime( ) - sys.uptime )
-    base.msg:route( pl, false, script, sf( '%s ', lang( 'server_uptime' ) ), cfg.cmsg.clrs.target, tostring( uptime ) )
-
-end
-
-/*
-*   concommand :: workshops
-*
-*   returns workshops that are loaded on the server through the various methods including rlib, rcore,
-*   and individual modules.
-*/
-
-function utils.cc_workshops( pl, cmd, args )
-
-    /*
-    *   define command
-    */
-
-    local ccmd = base.calls:get( 'commands', 'rlib_workshops' )
-
-    /*
-    *   scope
-    */
-
-    if ( ccmd.scope == 1 and not base:isconsole( pl ) ) then
-        access:deny_consoleonly( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   perms
-    */
-
-    if not access:bIsRoot( pl ) then
-        access:deny_permission( pl, script, ccmd.id )
-        return
-    end
-
-    /*
-    *   functionality
-    */
-
-    base:console( pl, lang( 'sym_sp' ) )
-
-    local ws1_lbl = sf( '%-15s', ' rlib » workshops' )
-    local ws2_lbl = sf( '%-15s', '' )
-    local ws0_lbl = sf( '%s %s', ws1_lbl, ws2_lbl )
-
-    base:console( pl, Color( 255, 0, 0 ), ws0_lbl )
-    base:console( pl, lang( 'sym_sp' ) )
-
-    local workshops = base.get:ws( ) or { }
-
-    for l, m in SortedPairs( workshops ) do
-        local collection_name = istable( m.steamapi ) and m.steamapi.title or lang( 'ws_no_steam_data' )
-
-        if CLIENT then
-            steamworks.FileInfo( l, function( res )
-                base.w[ l ].steamapi = { title = res.title }
-            end )
-            collection_name = base.w[ l ].steamapi.title
-        end
-
-        local ws1_data, ws3_data, ws2_data, ws4_data, ws5_data = '', '', '', '', ''
-        ws1_data = sf( '%-15s', tostring( l ) )
-        ws2_data = sf( '%-5s', '»' )
-        ws3_data = sf( '%-20s', tostring( m.src ) )
-        ws4_data = sf( '%-5s', '»' )
-        ws5_data = sf( '%-15s', collection_name )
-
-        base:console( pl, Color( 255, 255, 0 ), ws1_data, Color( 255, 0, 255 ), ws2_data, Color( 255, 255, 255 ), ws3_data, Color( 255, 0, 255 ), ws4_data, Color( 255, 255, 255 ), ws5_data )
-    end
-
-    base:console( pl, lang( 'sym_sp' ) )
-
+    rsay_netlib_sv( pl, msg, clr, dur, fade )
+    base.con:Guided( pl, msg )
 end

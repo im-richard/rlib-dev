@@ -1,7 +1,7 @@
 /*
 *   @package        : rlib
 *   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      : (c) 2018 - 2020
+*   @copyright      : (C) 2018 - 2020
 *   @since          : 1.0.0
 *   @website        : https://rlib.io
 *   @docs           : https://docs.rlib.io
@@ -25,6 +25,7 @@ local cfg                   = base.settings
 local helper                = base.h
 local design                = base.d
 local ui                    = base.i
+local cvar                  = base.v
 
 /*
 *   Localized translation func
@@ -102,7 +103,7 @@ function PANEL:Init( )
     *   display parent :: static || animated
     */
 
-    if helper:cvar_bool( 'rlib_animations_enabled' ) then
+    if cvar:GetBool( 'rlib_animations_enabled' ) then
         self:SetPos( ( ScrW( ) / 2 ) - ( ui_w / 2 ), ScrH( ) + ui_h )
         self:MoveTo( ( ScrW( ) / 2 ) - ( ui_w / 2 ), ( ScrH( ) / 2 ) - (  ui_h / 2 ), 0.4, 0, -1 )
     else
@@ -115,13 +116,13 @@ function PANEL:Init( )
 
     self.lblTitle               = ui.new( 'lbl', self           )
     :notext                     (                               )
-    :font                       ( pref( 'lang.title' )          )
+    :font                       ( pref( 'lang_title' )          )
     :clr                        ( Color( 255, 255, 255, 255 )   )
 
                                 :draw( function( s, w, h )
                                     if not self.title or self.title == '' then return end
-                                    draw.SimpleText( utf8.char( 9930 ), pref( 'lang.icon' ), 0, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( self.title, pref( 'lang.title' ), 25, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( utf8.char( 9930 ), pref( 'lang_icon' ), 0, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( self.title, pref( 'lang_title' ), 25, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -140,7 +141,7 @@ function PANEL:Init( )
 
                                 :draw( function( s, w, h )
                                     local clr_txt = s.hover and Color( 200, 55, 55, 255 ) or Color( 237, 237, 237, 255 )
-                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'lang.close' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( helper.get:utf8( 'close' ), pref( 'lang_close' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -173,7 +174,7 @@ function PANEL:Init( )
     :mline	                    ( true 				                )
     :canedit                    ( true                              )
     :scur	                    ( Color( 255, 255, 255, 255 ), 'beam' )
-    :txt	                    ( lang( 'lang_sel_desc' ), Color( 255, 255, 255, 255 ), pref( 'lang.desc' ) )
+    :txt	                    ( lang( 'lang_sel_desc' ), Color( 255, 255, 255, 255 ), pref( 'lang_desc' ) )
     :drawentry                  ( clr_text, clr_cur, clr_hl         )
 
     /*
@@ -184,8 +185,8 @@ function PANEL:Init( )
     :static		                ( TOP 					            )
     :margin		                ( 0, 3, 0, 3 			            )
     :tall                       ( 24                                )
-    :value                      ( helper:cvar_str( 'rlib_language' ) )
-    :font                       ( pref( 'lang.item' )               )
+    :value                      ( cvar:GetStr( 'rlib_language' )    )
+    :font                       ( pref( 'lang_item' )               )
 
                                 :draw( function( s, w, h )
                                     design.rbox( 4, 0, 0, w, h, Color( 67, 67, 67, 255 ) )

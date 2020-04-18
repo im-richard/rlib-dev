@@ -1,7 +1,7 @@
 /*
 *   @package        : rlib
 *   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      : (c) 2018 - 2020
+*   @copyright      : (C) 2018 - 2020
 *   @since          : 1.0.0
 *   @website        : https://rlib.io
 *   @docs           : https://docs.rlib.io
@@ -25,6 +25,7 @@ local cfg                   = base.settings
 local helper                = base.h
 local design                = base.d
 local ui                    = base.i
+local cvar                  = base.v
 local sf                    = string.format
 
 /*
@@ -66,7 +67,7 @@ local cvar_settings =
 
 local function setup_convars( )
     for k, v in pairs( cvar_settings ) do
-        base.cvar:setup( v.type, v.id, v.default, v.values )
+        cvar:Setup( v.type, v.id, v.default, v.values )
     end
 end
 setup_convars( )
@@ -113,6 +114,14 @@ function PANEL:Init( )
     self:DockPadding            ( 0, 34, 0, 0                   )
 
     /*
+    *   animated text scroll for clipboard btn
+    */
+
+    self.clipb_data             = { }
+    self.clipb_delay            = 0
+    self._anim_scrtxt           = design.anim_scrolltext( lang( 'copied_to_clipboard' ), 'rlib_lo_mviewer_overlay_copy', self.clipb_data, pref( 'mviewer_copyclip' ), Color( 255, 255, 255, 255 ), 0.5, 2 )
+
+    /*
     *   bIsValidOnly
     *
     *   utilizes util.IsValidModel
@@ -153,7 +162,7 @@ function PANEL:Init( )
     *   display parent :: static || animated
     */
 
-    if helper:cvar_bool( 'rlib_animations_enabled' ) then
+    if cvar:GetBool( 'rlib_animations_enabled' ) then
         self:SetPos( ( ScrW( ) / 2 ) - ( ui_w / 2 ), ScrH( ) + ui_h )
         self:MoveTo( ( ScrW( ) / 2 ) - ( ui_w / 2 ), ( ScrH( ) / 2 ) - (  ui_h / 2 ), 0.4, 0, -1 )
     else
@@ -164,15 +173,15 @@ function PANEL:Init( )
     *   titlebar
     */
 
-    self.lblTitle               = ui.new( 'lbl', self           )
-    :notext                     (                               )
-    :font                       ( pref( 'mviewer.title' )       )
-    :clr                        ( Color( 255, 255, 255, 255 )   )
+    self.lblTitle               = ui.new( 'lbl', self               )
+    :notext                     (                                   )
+    :font                       ( pref( 'mviewer_title' )           )
+    :clr                        ( Color( 255, 255, 255, 255 )       )
 
                                 :draw( function( s, w, h )
-                                    if not self.title or self.title == '' then self.title = 'model viewer' end
-                                    draw.SimpleText( utf8.char( 9930 ), pref( 'mviewer.icon' ), 0, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( self.title, pref( 'mviewer.title' ), 25, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    if not self.title or self.title == '' then self.title = lang( 'mviewer_title' ) end
+                                    draw.SimpleText( utf8.char( 9930 ), pref( 'mviewer_icon' ), 0, 8, Color( 240, 72, 133, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( self.title, pref( 'mviewer_title' ), 25, h / 2, Color( 237, 237, 237, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
@@ -183,30 +192,30 @@ function PANEL:Init( )
     *   inherit position/size properties
     */
 
-    self.btnClose               = ui.new( 'btn', self               )
-    :bsetup                     (                                   )
-    :notext                     (                                   )
-    :tooltip                    ( lang( 'tooltip_close' )           )
-    :ocr                        ( self                              )
+    self.btnClose               = ui.new( 'btn', self                   )
+    :bsetup                     (                                       )
+    :notext                     (                                       )
+    :tooltip                    ( lang( 'tooltip_close' )               )
+    :ocr                        ( self                                  )
 
                                 :draw( function( s, w, h )
                                     local clr_txt = s.hover and Color( 200, 55, 55, 255 ) or Color( 237, 237, 237, 255 )
-                                    draw.SimpleText( '-', pref( 'mviewer.exit' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( '-', pref( 'mviewer_exit' ), w / 2, h / 2 + 4, clr_txt, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
     *   header pnl
     */
 
-    self.p_header               = ui.new( 'pnl', self               )
-    :static                     ( TOP                               )
-    :margin                     ( 0                                 )
-    :tall                       ( 60                                )
+    self.p_header               = ui.new( 'pnl', self                   )
+    :static                     ( TOP                                   )
+    :margin                     ( 0                                     )
+    :tall                       ( 60                                    )
 
                                 :draw( function( s, w, h )
                                     design.rbox( 0, 0, 0, w, h, Color( 34, 34, 34, 255 ) )
                                     design.box( 0, h - 1, w, 2, Color( 50, 50, 50, 255 ) )
-                                    if not self.title or self.title == '' then self.title = 'model viewer' end
+                                    if not self.title or self.title == '' then self.title = lang( 'mviewer_title' ) end
 
                                     if ( state == 0 ) then
                                         g = g + 1
@@ -230,28 +239,28 @@ function PANEL:Init( )
 
                                     local clr_rgb = Color( r, g, b )
 
-                                    draw.SimpleText( self.title, pref( 'mviewer.name' ), w / 2, h / 2, clr_rgb, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( self.title, pref( 'mviewer_name' ), w / 2, h / 2, clr_rgb, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
     *   subparent pnl
     */
 
-    self.p_subparent            = ui.new( 'pnl', self               )
-    :nodraw                     (                                   )
-    :static                     ( FILL                              )
-    :margin                     ( 10                                )
+    self.p_subparent            = ui.new( 'pnl', self                   )
+    :nodraw                     (                                       )
+    :static                     ( FILL                                  )
+    :margin                     ( 0, 0, 0, 0                            )
 
     /*
     *   dmodel
     */
 
-    self.p_model                = ui.new( 'mdl', self.p_subparent   )
-    :static                     ( FILL                              )
-    :mdl                        ( self.mdl_default                  )
+    self.p_model                = ui.new( 'mdl', self.p_subparent       )
+    :static                     ( FILL                                  )
+    :mdl                        ( self.mdl_default                      )
 
                                 :le( function( ent, s )
-                                    if not helper:cvar_bool( 'rlib_mviewer_banim' ) then
+                                    if not cvar:GetBool( 'rlib_mviewer_banim' ) then
                                         s:SetAngles( Angle( 0, 0, 0 ) )
                                         return
                                     end
@@ -264,73 +273,97 @@ function PANEL:Init( )
 
                                 :logic( function( s )
                                     if s:GetModel( ) == self.mdl_default then
-                                        s:SetFOV( 62 )
-                                        s:SetCamPos( Vector( 187, -107, 93 ) )
-                                        s:SetLookAt( Vector( 20, 13, 13 ) )
+                                        s:SetFOV    ( 62                        )
+                                        s:SetCamPos ( Vector( 187, -107, 93 )   )
+                                        s:SetLookAt ( Vector( 20, 13, 13 )      )
                                         return
                                     end
-                                    s:SetFOV( helper:cvar_int( 'rlib_mviewer_fov' ) )
-                                    s:SetCamPos( Vector( helper:cvar_int( 'rlib_mviewer_campos_x' ), helper:cvar_int( 'rlib_mviewer_campos_y' ), helper:cvar_int( 'rlib_mviewer_campos_z' ) ) )
-                                    s:SetLookAt( Vector( helper:cvar_int( 'rlib_mviewer_lookat_x' ), helper:cvar_int( 'rlib_mviewer_lookat_y' ), helper:cvar_int( 'rlib_mviewer_lookat_z' ) ) )
+                                    s:SetFOV        ( cvar:GetInt( 'rlib_mviewer_fov' ) )
+                                    s:SetCamPos     ( Vector( cvar:GetInt( 'rlib_mviewer_campos_x' ), cvar:GetInt( 'rlib_mviewer_campos_y' ), cvar:GetInt( 'rlib_mviewer_campos_z' ) ) )
+                                    s:SetLookAt     ( Vector( cvar:GetInt( 'rlib_mviewer_lookat_x' ), cvar:GetInt( 'rlib_mviewer_lookat_y' ), cvar:GetInt( 'rlib_mviewer_lookat_z' ) ) )
                                 end )
 
                                 :po( function( s, w, h )
-                                    local pos_x, pos_y, pos_z       = helper:cvar_int( 'rlib_mviewer_campos_x' ), helper:cvar_int( 'rlib_mviewer_campos_y' ), helper:cvar_int( 'rlib_mviewer_campos_z' )
-                                    local look_x, look_y, look_z    = helper:cvar_int( 'rlib_mviewer_lookat_x' ), helper:cvar_int( 'rlib_mviewer_lookat_y' ), helper:cvar_int( 'rlib_mviewer_lookat_z' )
-                                    local fov, bAnim                = helper:cvar_int( 'rlib_mviewer_fov' ), helper:cvar_bool( 'rlib_mviewer_banim' ) and 'ON' or 'OFF'
+                                    local pos_x, pos_y, pos_z       = cvar:GetInt( 'rlib_mviewer_campos_x' ), cvar:GetInt( 'rlib_mviewer_campos_y' ), cvar:GetInt( 'rlib_mviewer_campos_z' )
+                                    local look_x, look_y, look_z    = cvar:GetInt( 'rlib_mviewer_lookat_x' ), cvar:GetInt( 'rlib_mviewer_lookat_y' ), cvar:GetInt( 'rlib_mviewer_lookat_z' )
+                                    local fov, bAnim                = cvar:GetInt( 'rlib_mviewer_fov' ), cvar:GetBool( 'rlib_mviewer_banim' ) and 'ON' or 'OFF'
                                     local bValidOnly                = self.bIsValidOnly and 'ON' or 'OFF'
-                                    local getmodel                  = self.p_model:GetModel( ) and tostring( self.p_model:GetModel( ) ) or ''
-                                    local modelpath                 = ( self.bIsValidOnly and util.IsValidModel( getmodel ) and getmodel ) or ( not self.bIsValidOnly and getmodel ) or getmodel or 'invalid model path'
+                                    local y_pos                     = 10
 
                                     local clr_label                 = Color( 200, 200, 200, 255 )
                                     local clr_value                 = Color( 93, 180, 255, 255 )
 
-                                    local w_sz, h_sz = w, h
+                                    local w_sz, h_sz                = w, h
                                     draw.TexturedQuad { texture = surface.GetTextureID( helper._mat[ 'grad_up' ] ), color = Color( 0, 0, 0, 200 ), x = 0, y = h_sz - 100, w = w_sz, h = 100 }
 
                                     -- stats :: top left :: labels
-                                    draw.SimpleText( 'cam', pref( 'mviewer.minfo' ), 55, 10, clr_label, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( 'lookat', pref( 'mviewer.minfo' ), 55, 30, clr_label, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( 'fov', pref( 'mviewer.minfo' ), 55, 50, clr_label, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( 'cam', pref( 'mviewer_minfo' ), 85, y_pos + 10, clr_label, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( 'lookat', pref( 'mviewer_minfo' ), 85, y_pos + 30, clr_label, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( 'fov', pref( 'mviewer_minfo' ), 85, y_pos + 50, clr_label, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
 
                                     -- stats :: top left :: values
-                                    draw.SimpleText( sf( '%sx %sy %sz', pos_x, pos_y, pos_z ), pref( 'mviewer.minfo' ), 80, 10, clr_value, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( sf( '%sx %sy %sz', look_x, look_y, look_z ), pref( 'mviewer.minfo' ), 80, 30, clr_value, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( sf( '%s', fov ), pref( 'mviewer.minfo' ), 80, 50, clr_value, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( sf( '%sx %sy %sz', pos_x, pos_y, pos_z ), pref( 'mviewer_minfo' ), 110, y_pos + 10, clr_value, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( sf( '%sx %sy %sz', look_x, look_y, look_z ), pref( 'mviewer_minfo' ), 110, y_pos + 30, clr_value, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( sf( '%s', fov ), pref( 'mviewer_minfo' ), 110, y_pos + 50, clr_value, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
 
                                     -- stats :: top right :: labels
-                                    draw.SimpleText( 'Animations', pref( 'mviewer.minfo' ), w - 105, 10, clr_label, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( 'Show valid only', pref( 'mviewer.minfo' ), w - 105, 30, clr_label, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( 'Animations', pref( 'mviewer_minfo' ), w - 105, y_pos + 10, clr_label, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( 'Show valid only', pref( 'mviewer_minfo' ), w - 105, y_pos + 30, clr_label, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
 
                                     -- stats :: top right :: values
-                                    draw.SimpleText( sf( '%s', bAnim ), pref( 'mviewer.minfo' ), w - 55, 10, clr_value, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( sf( '%s', bValidOnly ), pref( 'mviewer.minfo' ), w - 55, 30, clr_value, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
-
-                                    -- stats :: bottom left :: file path
-                                    draw.SimpleText( 'file', pref( 'mviewer.minfo' ), 25, h - 12, clr_label, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
-                                    draw.SimpleText( sf( '%s', modelpath ), pref( 'mviewer.minfo' ), 50, h - 12, clr_value, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( sf( '%s', bAnim ), pref( 'mviewer_minfo' ), w - 55, y_pos + 10, clr_value, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( sf( '%s', bValidOnly ), pref( 'mviewer_minfo' ), w - 55, y_pos + 30, clr_value, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
                                 end )
 
     /*
     *   controls pnl
     */
 
-    self.p_ctrls                = ui.new( 'pnl', self               )
-    :static                     ( BOTTOM                            )
-    :margin                     ( 8                                 )
-    :tall                       ( ui_h * 0.27                       )
+    self.p_ctrls                = ui.new( 'pnl', self                   )
+    :nodraw                     (                                       )
+    :static                     ( BOTTOM                                )
+    :margin                     ( 8, 8, 8, 0                            )
+    :tall                       ( ui_h * 0.27                           )
+
+    /*
+    *   btm block
+    */
+
+    local modelpath             = 'none'
+
+    self.p_block_               = ui.new( 'btn', self.p_ctrls           )
+    :bsetup                     (                                       )
+    :static                     ( TOP                                   )
+    :tall                       ( 30                                    )
+    :margin                     ( 0, 0, 0, 10                           )
+    :tip                        ( lang( 'mviewer_btn_copytoclip' )      )
 
                                 :draw( function( s, w, h )
-                                    design.rbox_adv( 4, 2, 2, w - 4, h - 4, Color( 36, 36, 36, 255 ), true, true, false, false )
+                                    local btn_txt   = s.hover and lang( 'mviewer_btn_copy' ) or lang( 'mviewer_btn_path' )
+                                    local btn_clr   = s.hover and Color( 156, 4, 81, 255 ) or Color( 31, 133, 222, 255 )
+
+                                    design.rbox_adv( 4, 2, 2, w - 4, h - 4, Color( 25, 25, 25, 255 ), true, false, true, false )
+                                    design.rbox_adv( 4, 2, 2, 50, h - 4, btn_clr, true, false, true, false )
+
+                                    local getmodel  = self.p_model:GetModel( ) and tostring( self.p_model:GetModel( ) ) or ''
+                                    modelpath       = ( self.bIsValidOnly and util.IsValidModel( getmodel ) and getmodel ) or ( not self.bIsValidOnly and getmodel ) or getmodel or 'invalid model path'
+
+                                    draw.SimpleText( btn_txt, pref( 'mviewer_minfo' ), ( 53 / 2 ), h / 2 - 1, clr_label, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+                                    draw.SimpleText( sf( '%s', modelpath ), pref( 'mviewer_minfo' ), 60, h / 2, clr_value, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                                end )
+
+                                :oc( function( s )
+                                    SetClipboardText( modelpath )
+                                    self.clipb_delay = CurTime( ) + 0.5
                                 end )
 
     /*
     *   btm block
     */
 
-    self.p_block_btm            = ui.new( 'pnl', self.p_ctrls       )
-    :static                     ( TOP                               )
-    :tall                       ( 35                                )
+    self.p_block_btm            = ui.new( 'pnl', self.p_ctrls           )
+    :static                     ( TOP                                   )
+    :tall                       ( 35                                    )
 
                                 :draw( function( s, w, h )
                                     design.rbox( 4, 2, 2, w - 4, h - 4, Color( 31, 31, 31, 255 ) )
@@ -340,23 +373,24 @@ function PANEL:Init( )
     *   search box
     */
 
-    self.dt_searchbox           = ui.new( 'entry', self.p_block_btm )
-    :static		                ( FILL 					            )
-    :margin		                ( 10, 5, 4, 5 			            )
-    :mline	                    ( false 				            )
-    :textclr                    ( Color( 255, 255, 255, 255 )       )
-    :scur	                    ( Color( 255, 255, 255, 255 ), 'beam' )
-    :enabled                    ( true                              )
-    :allowascii                 ( false                             )
-    :canedit                    ( true                              )
-    :autoupdate	                ( true 					            )
-    :txt	                    ( 'Search', Color( 255, 255, 255, 255 ), pref( 'mviewer.searchbox' ) )
-    :drawentry                  ( clr_text, clr_cur, clr_hl         )
-    :ocnf                       ( true                              )
+    self.dt_searchbox           = ui.new( 'entry', self.p_block_btm     )
+    :static		                ( FILL 					                )
+    :margin		                ( 10, 5, 4, 5 			                )
+    :mline	                    ( false 				                )
+    :textclr                    ( Color( 255, 255, 255, 255 )           )
+    :scur	                    ( Color( 255, 255, 255, 255 ), 'beam'   )
+    :enabled                    ( true                                  )
+    :allowascii                 ( false                                 )
+    :canedit                    ( true                                  )
+    :autoupdate	                ( true 					                )
+    :txt	                    ( lang( 'mviewer_search_def' ), Color( 255, 255, 255, 255 ), pref( 'mviewer_searchbox' ) )
+    :drawentry                  ( clr_text, clr_cur, clr_hl             )
+    :ocnf                       ( true                                  )
 
                                 :onenter( function( s )
-                                    local val = s:GetValue( )
-                                    val = helper.str:clean_ws( val )
+                                    local val   = s:GetValue( )
+                                    val         = helper.str:clean_ws( val )
+
                                     if ui:valid( self.p_model ) then
                                         if self.bIsValidOnly and util.IsValidModel( self.p_model:GetModel( ) ) or not self.bIsValidOnly then
                                             self.p_model:SetModel( val )
@@ -366,8 +400,8 @@ function PANEL:Init( )
                                     end
                                 end )
 
-                                :ongetfocus( function( s )
-                                    if s:GetValue( ) == 'Search' then
+                                :ogfocus( function( s )
+                                    if s:GetValue( ) == lang( 'mviewer_search_def' ) then
                                         s:SetValue( '' )
                                     end
                                 end )
@@ -376,60 +410,64 @@ function PANEL:Init( )
     *   search box :: clear text
     */
 
-    self.b_searchclr = vgui.Create( 'DButton', self.dt_searchbox )
-    self.b_searchclr:Dock( RIGHT )
-    self.b_searchclr:DockMargin( 0, 3, 5, 3 )
-    self.b_searchclr:SetText( '' )
-    self.b_searchclr:SetWide( 21 )
-    self.b_searchclr:SetTooltip( 'clear text' )
-    self.b_searchclr.OnCursorEntered = function( s ) s.hover = true end
-    self.b_searchclr.OnCursorExited = function( s ) s.hover = false end
-    self.b_searchclr.Paint = function( s, w, h )
-        design.rbox( 6, 0, 0, w, h, Color( 200, 55, 55, 255 ) )
-        if s.hover then
-            design.rbox( 6, 0, 0, w, h, Color( 15, 15, 15, 100 ) )
-        end
-        draw.SimpleText( 'x', pref( 'mviewer.clear' ), w / 2, h / 2 - 2, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    end
-    self.b_searchclr.DoClick = function( s )
-        s:GetParent( ):SetValue( self.mdl_default )
-    end
+    self.b_searchclr        = ui.new( 'btn', self.dt_searchbox      )
+    :bsetup                 (                                       )
+    :static                 ( RIGHT                                 )
+    :margin                 ( 0, 3, 5, 3                            )
+    :wide                   ( 21                                    )
+    :tip                    ( lang( 'mviewer_btn_tip_clear' )       )
 
-    self.b_submit = vgui.Create( 'DButton', self.dt_searchbox )
-    self.b_submit:Dock( RIGHT )
-    self.b_submit:DockMargin( 0, 3, 5, 3 )
-    self.b_submit:SetText( '' )
-    self.b_submit:SetWide( 21 )
-    self.b_submit:SetTooltip( 'search' )
-    self.b_submit.OnCursorEntered = function( s ) s.hover = true end
-    self.b_submit.OnCursorExited = function( s ) s.hover = false end
-    self.b_submit.Paint = function( s, w, h )
-        design.rbox( 6, 0, 0, w, h, Color( 70, 140, 84, 255 ) )
-        if s.hover then
-            design.rbox( 6, 0, 0, w, h, Color( 15, 15, 15, 100 ) )
-        end
-        draw.SimpleText( '>', pref( 'mviewer.enter' ), w / 2, h / 2 - 2, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    end
-    self.b_submit.DoClick = function( s )
-        local val = self.dt_searchbox:GetValue( )
-        val = helper.str:clean_ws( val )
-        if ui:valid( self.p_model ) then
-            if self.bIsValidOnly and util.IsValidModel( self.p_model:GetModel( ) ) or not self.bIsValidOnly then
-                self.p_model:SetModel( val )
-            else
-                self.p_model:SetModel( self.mdl_default )
-            end
-        end
-    end
+                            :draw( function( s, w, h )
+                                design.rbox( 6, 0, 0, w, h, Color( 200, 55, 55, 255 ) )
+                                if s.hover then
+                                    design.rbox( 6, 0, 0, w, h, Color( 15, 15, 15, 100 ) )
+                                end
+                                draw.SimpleText( 'x', pref( 'mviewer_clear' ), w / 2, h / 2 - 2, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                            end )
+
+                            :oc( function( s )
+                                s:GetParent( ):SetValue( self.mdl_default )
+                            end )
+
+
+
+
+    self.b_submit           = ui.new( 'btn', self.dt_searchbox      )
+    :bsetup                 (                                       )
+    :static                 ( RIGHT                                 )
+    :margin                 ( 0, 3, 5, 3                            )
+    :wide                   ( 21                                    )
+    :tip                    ( lang( 'mviewer_btn_tip_search' )      )
+
+                            :draw( function( s, w, h )
+                                design.rbox( 6, 0, 0, w, h, Color( 70, 140, 84, 255 ) )
+                                if s.hover then
+                                    design.rbox( 6, 0, 0, w, h, Color( 15, 15, 15, 100 ) )
+                                end
+                                draw.SimpleText( '>', pref( 'mviewer_enter' ), w / 2, h / 2 - 2, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                            end )
+
+                            :oc( function( s )
+                                local val   = self.dt_searchbox:GetValue( )
+                                val         = helper.str:clean_ws( val )
+
+                                if ui:valid( self.p_model ) then
+                                    if self.bIsValidOnly and util.IsValidModel( self.p_model:GetModel( ) ) or not self.bIsValidOnly then
+                                        self.p_model:SetModel( val )
+                                    else
+                                        self.p_model:SetModel( self.mdl_default )
+                                    end
+                                end
+                            end )
 
     /*
     *   scroll pnl
     */
 
-    self.dsp = vgui.Create( 'DScrollPanel', self.p_ctrls )
-    self.dsp:Dock( FILL )
-    self.dsp:DockMargin( 5, 5, 5, 5 )
-    self.dsp.Paint = function( s, w, h ) end
+    self.dsp                = ui.new( 'dsp', self.p_ctrls   )
+    :nodraw                 (                               )
+    :static                 ( FILL                          )
+    :margin                 ( 5                             )
 
     /*
     *   scroll bar
@@ -465,7 +503,7 @@ function PANEL:Init( )
             self.l_name = vgui.Create( 'DLabel', self.p_block )
             self.l_name:Dock( LEFT )
             self.l_name:DockMargin( 15, 0, 0, 5 )
-            self.l_name:SetFont( pref( 'mviewer.control' ) )
+            self.l_name:SetFont( pref( 'mviewer_control' ) )
             self.l_name:SetTextColor( Color( 255, 255, 255, 255 ) )
             self.l_name:SetText( v.desc )
             self.l_name:SizeToContents( )
@@ -502,7 +540,7 @@ function PANEL:Init( )
             self.l_name = vgui.Create( 'DLabel', self.p_block_cont )
             self.l_name:Dock( FILL )
             self.l_name:DockMargin( 15, 0, 0, 0 )
-            self.l_name:SetFont( pref( 'mviewer.control' ) )
+            self.l_name:SetFont( pref( 'mviewer_control' ) )
             self.l_name:SetTextColor( Color( 255, 255, 255, 255 ) )
             self.l_name:SetText( v.name )
             self.l_name:SizeToContents( )
@@ -635,9 +673,26 @@ function PANEL:Paint( w, h )
     design.rbox( 4, 0, 0, w, h, Color( 40, 40, 40, 255 ) )
     design.rbox_adv( 0, 0, 0, w, 34, Color( 30, 30, 30, 255 ), true, true, false, false )
 
+    local remaining   = math.Round( self.clipb_delay - CurTime( ) ) or 0
+    local limit       = math.Clamp( remaining, 0, 5 )
+
+    if limit == 1 and #self.clipb_data == 0 then
+        timex.simple( 'rlib_lo_mviewer_copy_anim', 0.1, function( )
+            if #self.clipb_data == 0 then
+                local pos_x, pos_y  = self.p_block_:LocalToScreen( )
+                local exp           = CurTime( ) + ( self._anim_scrtxt or 2 )
+
+                pos_x = pos_x
+                pos_y = pos_y - 20
+
+                table.insert( self.clipb_data, { pos = pos_x, x = pos_x, y = pos_y, expires = exp } )
+            end
+        end )
+    end
+
     -- resizing arrow
-    draw.SimpleText( utf8.char( 9698 ), pref( 'mviewer.resizer' ), w - 3, h - 7, Color( 240, 72, 133, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
-    draw.SimpleText( utf8.char( 9698 ), pref( 'mviewer.resizer' ), w - 5, h - 9, Color( 40, 40, 40, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+    draw.SimpleText( utf8.char( 9698 ), pref( 'mviewer_resizer' ), w - 3, h - 7, Color( 240, 72, 133, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+    draw.SimpleText( utf8.char( 9698 ), pref( 'mviewer_resizer' ), w - 5, h - 9, Color( 40, 40, 40, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
 end
 
 /*

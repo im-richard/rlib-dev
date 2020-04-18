@@ -91,97 +91,6 @@ local function modules_cstats( )
 end
 
 /*
-*   module :: version
-*
-*   returns the version of the installed module as a table
-*
-*   @call   : rcore:module_ver( mod )
-*           : rcore:module_ver( 'lunera' )
-*
-*   @since  : v1.1.5
-*   @return : tbl
-*           : major, minor, patch
-*/
-
-function base:module_ver( mod )
-    if not mod then
-        return {
-            [ 'major' ] = 1,
-            [ 'minor' ] = 0,
-            [ 'patch' ] = 0
-        }
-    end
-    if isstring( mod ) and self.modules[ mod ] and self.modules[ mod ].version then
-        if isstring( self.modules[ mod ].version ) then
-            local ver = string.Explode( '.', self.modules[ mod ].version )
-            return {
-                [ 'major' ] = ver[ 'major' ] or ver[ 1 ] or 1,
-                [ 'minor' ] = ver[ 'minor' ] or ver[ 2 ] or 0,
-                [ 'patch' ] = ver[ 'patch' ] or ver[ 3 ] or 0
-            }
-        elseif istable( self.modules[ mod ].version ) then
-            return {
-                [ 'major' ] = self.modules[ mod ].version.major or self.modules[ mod ].version[ 1 ] or 1,
-                [ 'minor' ] = self.modules[ mod ].version.minor or self.modules[ mod ].version[ 2 ] or 0,
-                [ 'patch' ] = self.modules[ mod ].version.patch or self.modules[ mod ].version[ 3 ] or 0
-            }
-        end
-    elseif istable( mod ) and mod.version then
-        if isstring( mod.version ) then
-            local ver = string.Explode( '.', mod.version )
-            return {
-                [ 'major' ] = ver[ 'major' ] or ver[ 1 ] or 1,
-                [ 'minor' ] = ver[ 'minor' ] or ver[ 2 ] or 0,
-                [ 'patch' ] = ver[ 'patch' ] or ver[ 3 ] or 0
-            }
-        elseif istable( mod.version ) then
-            return {
-                [ 'major' ] = mod.version.major or mod.version[ 1 ] or 1,
-                [ 'minor' ] = mod.version.minor or mod.version[ 2 ] or 0,
-                [ 'patch' ] = mod.version.patch or mod.version[ 3 ] or 0
-            }
-        end
-    end
-    return {
-        [ 'major' ] = 1,
-        [ 'minor' ] = 0,
-        [ 'patch' ] = 0
-    }
-end
-
-/*
-*   module :: version to str
-*
-*   returns the version of the installed module in a human readable string
-*
-*   @call   : rcore:module_ver2str( mod )
-*           : rcore:module_ver2str( 'lunera' )
-*
-*   @since  : v1.1.5
-*   @return : str
-*/
-
-function base:module_ver2str( mod )
-    if not mod then return '1.0.0' end
-    if isstring( mod ) and self.modules[ mod ] and self.modules[ mod ].version then
-        if isstring( self.modules[ mod ].version ) then
-            return self.modules[ mod ].version
-        elseif istable( self.modules[ mod ].version ) then
-            local major, minor, patch = self.modules[ mod ].version.major or self.modules[ mod ].version[ 1 ] or 1, self.modules[ mod ].version.minor or self.modules[ mod ].version[ 2 ] or 0, self.modules[ mod ].version.patch or self.modules[ mod ].version[ 3 ] or 0
-            return sf( '%i.%i.%i', major, minor, patch )
-        end
-    elseif istable( mod ) and mod.version then
-        if isstring( mod.version ) then
-            return mod.version
-        elseif istable( mod.version ) then
-            local major, minor, patch = mod.version.major or mod.version[ 1 ] or 1, mod.version.minor or mod.version[ 2 ] or 0, mod.version.patch or mod.version[ 3 ] or 0
-            return sf( '%i.%i.%i', major, minor, patch )
-        end
-    end
-    return '1.0.0'
-end
-
-/*
 *   bHasModule
 *
 *   check if the specified module is valid or not
@@ -459,7 +368,7 @@ local function autoloader_manifest_modules( )
             if SERVER then AddCSLuaFile( inc ) end
 
             include( inc )
-            base:module_register( module_dir, sub )
+            base:Register( module_dir, sub )
         end
     end
 
@@ -480,7 +389,7 @@ local function autoloader_manifest_modules( )
             if SERVER then AddCSLuaFile( inc ) end
 
             include( inc )
-            base:module_register( path_manifest, sub )
+            base:Register( path_manifest, sub )
         end
     end
 
@@ -513,7 +422,7 @@ function base:autoloader_ext_modules( )
         for _, subfile in pairs( files ) do
             local path = loc .. subfile
             if not path:match( 'manifest' ) then continue end
-            self:module_register( loc, subfile, true )
+            self:Register( loc, subfile, true )
         end
 
     end
@@ -650,18 +559,21 @@ end
 *
 *   @param  : tbl, str mod
 *   @param  : int cat
-*   @param  : str data
-*   @param  : bool bPostnow
+*   @param  : str msg
+*   @param  : varg varg
 */
 
-function base:log( mod, cat, data, bPostnow )
+function base:log( mod, cat, msg, ... )
     if not mod then
         base:log( 2, 'unable to log unspecified module' )
         return false
     end
 
-    local mod_data
-    local bLoaded           = false
+    local mod_data      = { }
+    local bLoaded       = false
+    local bPostnow      = true
+    local args          = { ... }
+    local result, msg   = pcall( sf, msg, unpack( args ) )
 
     if isstring( mod ) then
         if self.modules[ mod ] and self.modules[ mod ].enabled then
@@ -684,24 +596,26 @@ function base:log( mod, cat, data, bPostnow )
     if not mod_data.logging then return end
     if not cat then cat = 1 end
 
-    local c_type
-    if isnumber( cat ) then
-        c_type = '[' .. helper.str:ucfirst( rlib._def.debug_titles[ cat ] ) .. ']'
-    elseif isstring( cat ) then
-        c_type = '[' .. cat .. ']'
+    local c_type        = isnumber( cat ) and '[' .. helper.str:ucfirst( rlib._def.debug_titles[ cat ] ) .. ']' or isstring( cat ) and '[' .. cat .. ']' or cat
+    local m_pf          = os.date( '%m%d%Y' )
+    local m_id          = sf( 'RL_%s.txt', m_pf )
+
+    local when          = '[' .. os.date( '%I:%M:%S' ) .. ']'
+    local resp          = sf( '%s %s %s', when, c_type, msg )
+
+    local _stdir        = storage.mft:getpath( 'dir_modules' )
+    local i_boot        = rlib.sys.startups or 0
+
+    if i_boot == 0 or i_boot == '0' then
+        i_boot = '#boot'
     end
 
-    local f_prefix  = os.date( '%m%d%Y' )
-    local f_name    = 'RL_' .. f_prefix .. '.txt'
+    local lpath     = sf( '%s/%s/logs/%s', _stdir, mod_data.id, i_boot )
 
-    local c_date    = '[' .. os.date( '%I:%M:%S' ) .. ']'
-    local c_comp    = sf( '%s %s %s', c_date, c_type, data )
-
-    local _stdir    = storage.mft:getpath( 'dir_modules' )
-    storage.file.append( _stdir .. '/' .. mod_data.id .. '/logs', f_name, c_comp )
+    storage.file.append( lpath, m_id, resp )
 
     if bPostnow then
-        konsole:add_simple( cat, data )
+        konsole:add_simple( cat, msg )
     end
 end
 
@@ -713,7 +627,7 @@ end
 
 local function modules_initialize( )
 
-    hook.Run( pid( 'modules.load.pre' ) )
+    rhook.run.rlib( 'modules_load_pre' )
 
     autoloader_manifest_modules( )
 
@@ -729,11 +643,11 @@ local function modules_initialize( )
 
     rlib:log( 0 )
 
-    hook.Run( pid( 'modules.load.post' ), base.modules )
+    rhook.run.rlib( 'rcore_modules_load_post', base.modules )
 
 end
-hook.Add( pid( 'loader.post' ), pid( 'modules.initialize' ), modules_initialize )
-hook.Add( 'OnReloaded', pid( 'modules.onreload' ), modules_initialize )
+rhook.new.rlib( 'rcore_loader_post', 'rcore_modules_initialize', modules_initialize )
+rhook.new.gmod( 'OnReloaded', 'rcore_modules_onreload', modules_initialize )
 
 /*
 *   modules :: storage
@@ -797,7 +711,7 @@ function base:modules_storage( source )
     end
 
 end
-hook.Add( 'PostGamemodeLoaded', pid( 'modules.storage' ), function( source ) base:modules_storage( source ) end )
+rhook.new.gmod( 'PostGamemodeLoaded', 'rcore_modules_storage', function( source ) base:modules_storage( source ) end )
 
 /*
 *   modules :: precache
@@ -807,7 +721,7 @@ hook.Add( 'PostGamemodeLoaded', pid( 'modules.storage' ), function( source ) bas
 *   @param  : tbl source
 */
 
-function base:modules_precache( source )
+function base:Precache( source )
     if source and not istable( source ) then
         rlib:log( 2, 'cannot find entities for modules, bad table\n%s', debug.traceback( ) )
         return
@@ -897,7 +811,7 @@ function base:modules_precache( source )
         end
     end
 end
-hook.Add( 'PostGamemodeLoaded', pid( 'modules.precache' ), function( source ) base:modules_precache( source ) end )
+rhook.new.gmod( 'PostGamemodeLoaded', 'rcore_modules_precache', function( source ) base:Precache( source ) end )
 
 /*
 *   modules :: dependency check
@@ -935,7 +849,7 @@ local function modules_dependencies( source )
         end
     end
 end
-hook.Add( 'PostGamemodeLoaded', pid( 'modules.dependencies' ), modules_dependencies )
+rhook.new.gmod( 'PostGamemodeLoaded', 'rcore_modules_dependencies', modules_dependencies )
 
 /*
 *   modules :: register workshops
@@ -1046,7 +960,7 @@ local function modules_resources( source )
     end
 
 end
-hook.Add( pid( 'modules.load.post' ), pid( 'modules.resources.register' ), modules_resources )
+rhook.new.rlib( 'rcore_modules_load_post', 'rcore_modules_res_register', modules_resources )
 
 /*
 *   modules :: register particles
@@ -1093,7 +1007,7 @@ local function register_particles( source )
     end
 
 end
-hook.Add( pid( 'modules.load.post' ), pid( 'modules.particles.register' ), register_particles )
+rhook.new.rlib( 'rcore_modules_load_post', 'rcore_modules_ptc_register', register_particles )
 
 /*
 *   modules :: register sounds
@@ -1137,14 +1051,14 @@ local function register_sounds( source )
     end
 
 end
-hook.Add( pid( 'modules.load.post' ), pid( 'modules.sounds.register' ), register_sounds )
+rhook.new.rlib( 'rcore_modules_load_post', 'rcore_modules_snd_register', register_sounds )
 
 /*
 *   modules :: storage :: register defaults
 *
 *   register default storage tables
 *
-*   @ex     : hook.Run( pid( 'modules.storage.struct' ), mod_id )
+*   @ex     : rhook.run.rlib( 'rcore_modules_storage_struct', mod_id )
 *
 *   @param  : tbl source
 */
@@ -1246,7 +1160,7 @@ local function storage_struct_defs( mod_id )
     end
 
 end
-hook.Add( pid( 'modules.storage.struct' ), pid( 'modules.storage.struct' ), storage_struct_defs )
+rhook.new.rlib( 'rcore_modules_storage_struct', storage_struct_defs )
 
 /*
 *   register module
@@ -1260,7 +1174,7 @@ hook.Add( pid( 'modules.storage.struct' ), pid( 'modules.storage.struct' ), stor
 *   @param  : bool b_isext
 */
 
-function base:module_register( path, mod, b_isext )
+function base:Register( path, mod, b_isext )
 
     if not isstring( path ) or not mod then
         rlib:log( 2, lang( 'logs_rcore_mnfst_err' ) )
@@ -1366,7 +1280,7 @@ function base:module_register( path, mod, b_isext )
     *   on repetitiveness of declaring these in the module manifest file
     */
 
-    hook.Run( pid( 'modules.storage.struct' ), mod_id )
+    rhook.run.rlib( 'rcore_modules_storage_struct', mod_id )
 
     /*
     *   module sys tbl
@@ -1437,7 +1351,7 @@ function base:module_register( path, mod, b_isext )
     end
 
     if rnet then
-        hook.Run( pid( 'rnet_register', mod_id ) )
+        rhook.run.gmod( pid( 'rnet_register', mod_id ) )
     end
 
     /*
@@ -1459,4 +1373,4 @@ function base:module_register( path, mod, b_isext )
     end
 
 end
-hook.Add( pid( 'modules.register' ), pid( 'modules.register' ), function( path, mod, b_isext ) base:module_register( path, mod, b_isext ) end )
+rhook.new.rlib( 'rcore_modules_register', function( path, mod, b_isext ) base:Register( path, mod, b_isext ) end )

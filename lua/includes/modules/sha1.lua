@@ -2,7 +2,7 @@
 *   @package        : rlib
 *   @module         : sha1
 *   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      : (c) 2018 - 2020
+*   @copyright      : (C) 2018 - 2020
 *   @since          : 1.0.0
 *   @website        : https://rlib.io
 *   @docs           : https://docs.rlib.io
@@ -17,9 +17,9 @@
 */
 
 /*
-*   @package        sha1
-*   @author         Enrique García Cota + Eike Decker + Jeffrey Friedl
-*   @copyright      (C) 2013
+*   @package        : sha1
+*   @author         : Enrique García Cota + Eike Decker + Jeffrey Friedl
+*   @copyright      : (C) 2013
 * 
 *   MIT License
 *
@@ -417,7 +417,7 @@ function sha1.encrypt( msg )
     *   append len as 64-bit
     */
 
-    local b1, r1    = modf( msg_len_in_bits / 0x01000000 ) 
+    local b1, r1    = modf( msg_len_in_bits / 0x01000000 )
     local b2, r2    = modf( 0x01000000 * r1 / 0x00010000 )
     local b3, r3    = modf( 0x00010000 * r2 / 0x00000100 )
     local b4        = 0x00000100 * r3

@@ -33,7 +33,7 @@
     MODULE.owner		    = false
     MODULE.version          = { 2, 0, 0 }
     MODULE.libreq           = { 3, 0, 0 }
-    MODULE.released		    = 1582778880
+    MODULE.released		    = 1585389626
 
 /*
 *   fonts

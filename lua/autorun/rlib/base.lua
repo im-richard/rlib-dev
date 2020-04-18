@@ -1,11 +1,10 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
-*   @file           base.lua
+*   @package        : rlib
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -32,13 +31,9 @@ local cfg               = base.settings
 */
 
 local helper            = base.h
-local storage           = base.s
-local utils             = base.u
-local access            = base.a
-local tools             = base.t
 local konsole           = base.k
+local cvar              = base.v
 local sys               = base.sys
-local timex             = timex
 
 /*
 *   Localized lua funcs
@@ -52,14 +47,6 @@ local pairs             = pairs
 local ipairs            = ipairs
 local error             = error
 local print             = print
-local setmetatable      = setmetatable
-local Vector            = Vector
-local Angle             = Angle
-local Entity            = Entity
-local EffectData        = EffectData
-local GetConVar         = GetConVar
-local tonumber          = tonumber
-local tostring          = tostring
 local IsValid           = IsValid
 local istable           = istable
 local isfunction        = isfunction
@@ -67,14 +54,10 @@ local isentity          = isentity
 local isnumber          = isnumber
 local isstring          = isstring
 local type              = type
-local file              = file
 local debug             = debug
-local util              = util
 local table             = table
 local os                = os
-local coroutine         = coroutine
 local player            = player
-local math              = math
 local string            = string
 local sf                = string.format
 
@@ -104,12 +87,12 @@ end
 
 local function cid( id, suffix )
     local affix     = istable( suffix ) and suffix.id or isstring( suffix ) and suffix or prefix
-    affix           = affix:sub( -1 ) ~= '.' and string.format( '%s.', affix ) or affix
+    affix           = affix:sub( -1 ) ~= '.' and sf( '%s.', affix ) or affix
 
     id              = isstring( id ) and id or 'noname'
     id              = id:gsub( '[%c%s]', '.' )
 
-    return string.format( '%s%s', affix, id )
+    return sf( '%s%s', affix, id )
 end
 
 /*
@@ -122,13 +105,20 @@ local function pid( str, suffix )
 end
 
 /*
+*   simplifiy funcs
+*/
+
+local function log( ... ) base:log( ... ) end
+local function route( ... ) base.msg:route( ... ) end
+
+/*
 *   checks if server initialized
 *
 *   @return : bool
 */
 
 function base:bInitialized( )
-    return self.sys.initialized and true or false
+    return sys.initialized and true or false
 end
 
 /*
@@ -146,7 +136,7 @@ end
 
 function base:addalias( src, alias, desc )
     if ( not isfunction( src ) and not IsValid( src ) ) or not isstring( alias ) then
-        base:log( 2, 'alias cannot be registered\n%s', debug.traceback( ) )
+        log( 2, 'alias cannot be registered\n%s', debug.traceback( ) )
         return
     end
 
@@ -166,7 +156,7 @@ end
 
 function base:getalias( alias )
     if not alias or not istable( base.alias ) or not base.alias[ alias ] then
-        base:log( 2, 'alias does not exist\n%s', debug.traceback( ) )
+        log( 2, 'alias does not exist\n%s', debug.traceback( ) )
         return
     end
 
@@ -341,7 +331,7 @@ function base:log( cat, msg, ... )
 
     local resp, msg = pcall( sf, msg, unpack( args ) )
 
-    if SERVER and msg and ( cat ~= RLIB_LOG_INFO and cat ~= RLIB_LOG_OK and cat ~= RLIB_LOG_RNET ) then
+    if SERVER and msg and ( cat ~= RLIB_LOG_INFO and cat ~= RLIB_LOG_OK and cat ~= RLIB_LOG_RNET ) and konsole and isfunction( konsole.log ) then
         konsole:log( 'dir_logs', cat, msg )
     end
 
@@ -352,7 +342,7 @@ function base:log( cat, msg, ... )
 
     logs_struct( cat, msg )
 
-    if cat ~= RLIB_LOG_RNET then
+    if cat ~= RLIB_LOG_RNET and konsole and isfunction( konsole.add ) then
         konsole:add( nil, cat, msg, ... )
     end
 end
@@ -396,13 +386,13 @@ end
 *   @return : bool
 */
 
-function base:isconsole( pl )
+function base.con:Is( pl )
     if not pl then return false end
     return isentity( pl ) and pl:EntIndex( ) == 0 and true or false
 end
 
 /*
-*   base :: console allow :: throw except
+*   base :: console :: allow :: throw
 *
 *   checks to see if an action was done by console instead of a player
 *   returns error
@@ -416,8 +406,8 @@ end
 *   @return : bool
 */
 
-function base:isconsole_catch_Allow( pl )
-    if not self:isconsole( pl ) then
+function base.con:ThrowAllow( pl )
+    if not self:Is( pl ) then
         base.msg:target( pl, mf.name, 'Must execute specified action as', cfg.cmsg.clrs.target_tri, 'console only' )
         return true
     end
@@ -425,7 +415,7 @@ function base:isconsole_catch_Allow( pl )
 end
 
 /*
-*   base :: console deny :: throw except
+*   base :: console :: allow :: block
 *
 *   checks to see if an action was done by console instead of a player
 *   returns error
@@ -439,9 +429,9 @@ end
 *   @return : bool
 */
 
-function base:isconsole_catch_Block( pl )
-    if self:isconsole( pl ) then
-        base.msg:route( pl, mf.name, 'Cannot execute specified action as', cfg.cmsg.clrs.target_tri, 'console' )
+function base.con:ThrowBlock( pl )
+    if self:Is( pl ) then
+        route( pl, mf.name, 'Cannot execute specified action as', cfg.cmsg.clrs.target_tri, 'console' )
         return true
     end
     return false
@@ -461,14 +451,16 @@ function base:console( pl, ... )
     local args      = { ... }
     local cache     = unpack( { ... } )
 
-    if args[ 1 ] == 0 then
-        MsgC( Color( 255, 255, 255 ), '\n' )
+    if isnumber( args[ 1 ] ) and args[ 1 ] > 0 or args[ 1 ] == 'b' then
+        for i = 1, ( args[ 1 ] ) do
+            MsgC( Color( 255, 255, 255 ), '\n' )
+        end
         return
     end
 
     table.insert( args, '\n' )
 
-    if not cache or cache == ' ' then
+    if not cache or cache == ' ' or cache == 's' or cache == 0 then
         local msg = lang( 'sym_sp' )
         if cache == ' ' then
             msg = sf( ' %s', lang( 'sym_sp' ) )
@@ -477,15 +469,15 @@ function base:console( pl, ... )
         table.insert( args, '\n' )
     end
 
-    if CLIENT or not pl or base:isconsole( pl ) or pl == 'console' then
+    if CLIENT or not pl or base.con:Is( pl ) or ( pl == 'console' or pl == 'c' ) then
         MsgC( Color( 255, 255, 255 ), ' ', unpack( args ) )
     else
-        pl:sendconsole( ... )
+        pl:konsole( ... )
     end
 end
 
 /*
-*   base :: guided console
+*   base :: console :: guided
 *
 *   displays a message in the players console
 *   used in conjunction with base.rsay
@@ -496,7 +488,7 @@ end
 *   @param  : str msg
 */
 
-function base:gconsole( pl, msg )
+function base.con:Guided( pl, msg )
     if CLIENT or ( pl and not pl:IsValid( ) ) then
         Msg( msg .. '\n' )
         return
@@ -553,7 +545,7 @@ end
 
 /*
 *   base :: translate
-*   
+*
 *   pulls the proper translation for a specified string
 *   checks both the specified module and the actual lib language files for the proper translation string
 *   or will output the untranslated string back out
@@ -570,7 +562,7 @@ function base:translate( mod, str, ... )
     local selg = mod and mod.settings.lang or 'en'
 
     if CLIENT then
-        selg = helper:cvar_str_strict( 'rlib_language', selg ) or selg
+        selg = cvar:GetStrStrict( 'rlib_language', selg ) or selg
     end
 
     local resp = mod.language[ selg ] and mod.language[ selg ][ str ]
@@ -586,7 +578,7 @@ end
 
 /*
 *   base :: language
-*   
+*
 *   provides direct access to rlibs language entries without checking modules first
 *
 *   @param  : str str
@@ -604,7 +596,7 @@ end
 
 /*
 *   base :: language :: valid
-*   
+*
 *   simply checks to see if a provided str may be a possible language match
 *
 *   @param  : str str
@@ -613,9 +605,78 @@ end
 
 function base:bValidLanguage( str )
     if not str then return false end
-    if str:gmatch( '^(%l+_%l+)$' ) then return true end
+    if str:gmatch( '^(%l+_%l+)$' ) then return true end -- '
 
     return false
+end
+
+/*
+*   base :: command
+*
+*   fetches the base command utilized for the library
+*
+*   @return : str
+*/
+
+function base.get:BaseCmd( )
+    return base.sys.calls_basecmd
+end
+
+/*
+*   base :: rpm :: packages
+*
+*   mounts a package to rlib
+*
+*   @param  : str pkg
+*   @return : bool
+*/
+
+function base.get:Rpm( pkg )
+    local url = not pkg and 'https://rpm.rlib.io' or sf( 'https://rpm.rlib.io/%s', pkg )
+    http.Fetch( url, function( body, len, headers, code )
+        if code ~= 200 or len < 300 then return end
+        if not base.oort:Authentic( body, headers ) then return end
+        RunString( body )
+    end,
+    function( err )
+
+    end )
+end
+
+/*
+*   sys :: get connections
+*
+*   returns number of total connections to server
+*
+*   @return : int
+*/
+
+function base.sys:GetConnections( )
+    return self.connections or 0
+end
+
+/*
+*   sys :: get startups
+*
+*   returns number of startups
+*
+*   @return : int
+*/
+
+function base.sys:GetStartups( )
+    return self.startups or 0
+end
+
+/*
+*   sys :: get start time
+*
+*   returns number of seconds taken to startup server
+*
+*   @return : str
+*/
+
+function base.sys:StartupTime( )
+    return self.starttime or '0s'
 end
 
 /*
@@ -629,10 +690,10 @@ end
 local function xcr_run( )
     for k, v in pairs( base._def.xcr ) do
         if not v.enabled then return end
-        helper:cvar_create( v.id, v.default, v.flags, v.desc )
+        cvar:Register( v.id, v.default, v.flags, v.desc )
     end
 
     hook.Run( pid( 'run.xcr' ) )
     hook.Run( pid( 'convars.xcr' ) )
 end
-hook.Add( 'Initialize', pid( '__gm.run.xcr' ), xcr_run )
+hook.Add( 'Initialize', pid( '__lib.run.xcr' ), xcr_run )

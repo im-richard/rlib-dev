@@ -17,11 +17,11 @@
 */
 
 /*
-*   @package        json
-*   @author         Jeffrey Friedl [http://regex.info/blog/]
-*   @copyright      (C) 2010 - 2019
-*   @since          1.0.0
-*   @releases       http://regex.info/blog/lua/json
+*   @package         : json
+*   @author          : Jeffrey Friedl [http://regex.info/blog/]
+*   @copyright       : (C) 2010 - 2019
+*   @since           : 1.0.0
+*   @releases        : http://regex.info/blog/lua/json
 * 
 *   Creative Commons CC-BY "Attribution" License
 *   http://creativecommons.org/licenses/by/3.0/deed.en_US

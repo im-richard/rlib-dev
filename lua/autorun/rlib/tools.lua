@@ -1,11 +1,10 @@
 /*
-*   @package        rlib
-*   @author         Richard [http://steamcommunity.com/profiles/76561198135875727]
-*   @copyright      (C) 2018 - 2020
-*   @since          1.0.0
-*   @website        https://rlib.io
-*   @docs           https://docs.rlib.io
-*   @file           tools.lua
+*   @package        : rlib
+*   @author         : Richard [http://steamcommunity.com/profiles/76561198135875727]
+*   @copyright      : (C) 2018 - 2020
+*   @since          : 1.0.0
+*   @website        : https://rlib.io
+*   @docs           : https://docs.rlib.io
 * 
 *   MIT License
 *
@@ -37,7 +36,6 @@ local ui                    = base.i
 local mats                  = base.m
 local tools                 = base.t
 local konsole               = base.k
-local utils                 = base.u
 
 /*
 *   Localized translation func
@@ -74,7 +72,7 @@ function tools.dc:Run( )
     :title              ( lang( 'dc_title' )                    )
     :actshow            (                                       )
 end
-base.cc.Add( pid( 'dc' ), tools.dc.Run )
+rcc.new.gmod( pid( 'dc' ), tools.dc.Run )
 
 /*
 *	konsole :: run
@@ -89,7 +87,7 @@ function tools.konsole:Run( )
     end
     konsole.pnl:ActionShow( )
 end
-base.cc.Add( pid( 'konsole' ), tools.konsole.Run )
+rcc.new.gmod( pid( 'konsole' ), tools.konsole.Run )
 
 /*
 *	tools :: languages :: run
@@ -107,7 +105,7 @@ function tools.language:Run( )
     :title                  ( lang( 'lang_sel_title' )          )
     :actshow                (                                   )
 end
-base.cc.Add( pid( 'lang' ), tools.language.Run )
+rcc.new.gmod( pid( 'lang' ), tools.language.Run )
 
 /*
 *	tools :: mviewer :: run
@@ -126,7 +124,7 @@ function tools.mviewer:Run( )
     :title                  ( lang( 'mviewer_title' )           )
     :actshow                (                                   )
 end
-base.cc.Add( pid( 'mview' ), tools.mviewer.Run )
+rcc.new.gmod( pid( 'mview' ), tools.mviewer.Run )
 
 /*
 *   tools :: pco :: run
@@ -141,9 +139,28 @@ function tools.pco:Run( bEnable )
     bEnable = bEnable or false
 
     for k, v in pairs( helper._pco_cvars ) do
-        local val = v.val or ( bEnable and 1 ) or 0
-        base.cc.Run( v.id, val )
+        local val = ( bEnable and ( v.on or 1 ) ) or ( v.off or 0 )
+        rcc.run.gmod( v.id, val )
     end
+
+    if cfg.pco.hooks then
+        for k, v in pairs( helper._pco_hooks ) do
+            if bEnable then
+                hook.Remove( v.event, v.name )
+            else
+                hook.Add( v.event, v.name )
+            end
+        end
+    end
+
+    hook.Add( 'OnEntityCreated', 'rlib_widget_entcreated', function( ent )
+        if ent:IsWidget( ) then
+            hook.Add( 'PlayerTick', 'rlib_widget_tick', function( pl, mv )
+                widgets.PlayerTick( pl, mv )
+            end )
+            hook.Remove( 'OnEntityCreated', 'rlib_widget_entcreated' )
+        end
+    end )
 end
 
 /*
@@ -155,16 +172,24 @@ end
 function tools.rcfg:Run( )
     if not access:bIsDev( LocalPlayer( ) ) and not access:bIsRoot( LocalPlayer( ) ) then return end
 
+    /*
+    *   destroy existing pnl
+    */
+
     if ui:valid( self.pnl ) then
         ui:destroy( self.pnl )
         return
     end
 
+    /*
+    *   create / show parent pnl
+    */
+
     self.pnl                = ui.new( 'rlib.lo.rcfg'            )
     :title                  ( lang( 'lib_addons_title' )        )
     :actshow                (                                   )
 end
-base.cc.Add( pid( 'rcfg' ), tools.rcfg.Run )
+rcc.new.gmod( pid( 'rcfg' ), tools.rcfg.Run )
 
 /*
 *	tools :: rmain :: run
@@ -183,7 +208,7 @@ function tools.rmain:Run( )
     net.SendToServer        (                   )
 
     /*
-    *   about :: create / show parent pnl
+    *   destroy existing pnl
     */
 
     if ui:valid( self.pnl ) then
@@ -191,11 +216,15 @@ function tools.rmain:Run( )
         return
     end
 
+    /*
+    *   create / show parent pnl
+    */
+
     self.pnl                = ui.new( 'rlib.lo.about'           )
     :title                  ( lang( 'title_about' )             )
     :actshow                (                                   )
 end
-base.cc.Add( pid( 'about' ), tools.rmain.Run )
+rcc.new.gmod( pid( 'about' ), tools.rmain.Run )
 
 /*
 *	tools :: report :: run
@@ -206,16 +235,59 @@ base.cc.Add( pid( 'about' ), tools.rmain.Run )
 function tools.report:Run( )
     if not access:bIsDev( LocalPlayer( ) ) and not access:bIsRoot( LocalPlayer( ) ) then return end
 
+    /*
+    *   destroy existing pnl
+    */
+
     if ui:valid( self.pnl ) then
         ui:destroy( self.pnl )
         return
     end
 
+    /*
+    *   create / show parent pnl
+    */
+
     self.pnl                = ui.new( 'rlib.lo.report'          )
     :title                  ( lang( 'reports_title' )           )
     :actshow                (                                   )
 end
-base.cc.Add( pid( 'report' ), tools.report.Run )
+rcc.new.gmod( pid( 'report' ), tools.report.Run )
+
+/*
+*	tools :: welcome :: run
+*
+*	welcome interface for ?setup
+*/
+
+function tools.welcome:Run( )
+    if not access:bIsDev( LocalPlayer( ) ) and not access:bIsRoot( LocalPlayer( ) ) then return end
+
+    /*
+    *   destroy existing pnl
+    */
+
+    if ui:valid( self.pnl ) then
+        ui:destroy( self.pnl )
+        return
+    end
+
+    /*
+    *   about :: network update check
+    */
+
+    net.Start               ( 'rlib.welcome'    )
+    net.SendToServer        (                   )
+
+    /*
+    *   create / show parent pnl
+    */
+
+    self.pnl                = ui.new( 'rlib.lo.welcome'         )
+    :title                  ( lang( 'welcome_title' )           )
+    :actshow                (                                   )
+end
+rcc.new.gmod( pid( 'welcome' ), tools.welcome.Run, nil, nil, FCVAR_PROTECTED )
 
 /*
 *   netlib :: konsole
@@ -318,7 +390,11 @@ net.Receive( 'rlib.tools.rmain', netlib_tools_rmain )
 
 local i_konsole_think = 0
 local function th_binds_konsole( )
-    if not access:bIsDev( LocalPlayer( ) ) and not access:bIsAdmin( LocalPlayer( ) ) then return end
+    if not access:bIsDev( LocalPlayer( ) ) and not access:bIsAdmin( LocalPlayer( ) ) then
+        hook.Remove( 'Think', pid( 'keybinds.konsole' ) )
+        return
+    end
+
     if gui.IsConsoleVisible( ) then return end
 
     local iKey1, iKey2      = cfg.konsole.binds.act_btn1, cfg.konsole.binds.act_btn2
@@ -350,7 +426,11 @@ hook.Add( 'Think', pid( 'keybinds.konsole' ), th_binds_konsole )
 
 local i_rep_think = 0
 local function th_binds_report( )
-    if not access:bIsDev( LocalPlayer( ) ) and not access:bIsRoot( LocalPlayer( ) ) then return end
+    if not access:bIsDev( LocalPlayer( ) ) and not access:bIsRoot( LocalPlayer( ) ) then
+        hook.Remove( 'Think', pid( 'keybinds.report' ) )
+        return
+    end
+
     if gui.IsConsoleVisible( ) then return end
 
     local iKey1, iKey2      = cfg.report.binds.key1, cfg.report.binds.key2
@@ -382,7 +462,11 @@ hook.Add( 'Think', pid( 'keybinds.report' ), th_binds_report )
 
 local i_rmain_think = 0
 local function th_binds_rmain( )
-    if not access:bIsDev( LocalPlayer( ) ) and not access:bIsRoot( LocalPlayer( ) ) then return end
+    if not access:bIsDev( LocalPlayer( ) ) and not access:bIsRoot( LocalPlayer( ) ) then
+        hook.Remove( 'Think', pid( 'keybinds.rmain' ) )
+        return
+    end
+
     if gui.IsConsoleVisible( ) then return end
 
     local iKey1, iKey2      = cfg.rmain.binds.key1, cfg.rmain.binds.key2
@@ -414,7 +498,11 @@ hook.Add( 'Think', pid( 'keybinds.rmain' ), th_binds_rmain )
 
 local i_rcfg_think = 0
 local function th_binds_rcfg( )
-    if not access:bIsDev( LocalPlayer( ) ) and not access:bIsRoot( LocalPlayer( ) ) then return end
+    if not access:bIsDev( LocalPlayer( ) ) and not access:bIsRoot( LocalPlayer( ) ) then
+        hook.Remove( 'Think', pid( 'keybinds.rcfg' ) )
+        return
+    end
+
     if gui.IsConsoleVisible( ) then return end
     if not cfg.rcfg.binds.enabled then return end
 
